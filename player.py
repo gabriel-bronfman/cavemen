@@ -4,10 +4,10 @@ import cv2
 import redis
 import struct
 import numpy as np
-import plotly.graph_objects as go
+# import plotly.graph_objects as go
 
-ROTATE_VALUE = 1.5
-MOVE_VALUE = 10
+ROTATE_VALUE = 128
+MOVE_VALUE = 1
 
 class KeyboardPlayerPyGame(Player):
     def __init__(self):
@@ -22,7 +22,8 @@ class KeyboardPlayerPyGame(Player):
         self.map_data = np.zeros(self.map_size, dtype=np.uint8)
         self.direction = 0  # Represents the current angle in degrees
         self.map_scale = 4  # Each unit in the map_data will be a 4x4 pixel square in the OpenCV window
-        self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2) # Start in the middle of the map
+        #self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2) # Start in the middle of the map
+        self.player_position = (0,0)
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
 
@@ -36,8 +37,9 @@ class KeyboardPlayerPyGame(Player):
         # Reset map data
         self.map_data.fill(0)
         self.direction = 0
-        self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2)
-        self.draw_map(color=[0, 0, 255])
+        #self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2)
+        self.player_position = (0,0)
+        #self.draw_map(color=[0, 0, 255])
 
         pygame.init()
 
@@ -60,7 +62,7 @@ class KeyboardPlayerPyGame(Player):
             if event.type == pygame.KEYDOWN:
                 if event.key in self.keymap:
                     self.key_hold_state[event.key] = True
-                    self.key_hold_time[event.key]['start'] = pygame.time.get_ticks()
+                    
                     self.last_act |= self.keymap[event.key]
                 else:
                     self.show_target_images()
@@ -68,14 +70,13 @@ class KeyboardPlayerPyGame(Player):
             if event.type == pygame.KEYUP:
                 if event.key in self.keymap:
                     self.key_hold_state[event.key] = False
-                    self.key_hold_time[event.key]['end'] = pygame.time.get_ticks()
                     self.last_act ^= self.keymap[event.key]
-            self.update_map_on_keypress()
+        self.update_map_on_keypress()
         
         return self.last_act
 
     def show_target_images(self):
-        self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2)
+        self.player_position = (0,0)
         targets = self.get_target_images()
         if targets is None or len(targets) <= 0:
             return
@@ -150,12 +151,18 @@ class KeyboardPlayerPyGame(Player):
     
     def update_map_on_keypress(self):
         # Rotate left or right based on the current key hold state
-        self.direction = (ROTATE_VALUE*(self.key_hold_time[pygame.K_RIGHT]['end'] - self.key_hold_time[pygame.K_RIGHT]['start']) \
-            - ROTATE_VALUE*(self.key_hold_time[pygame.K_LEFT]['end'] - self.key_hold_time[pygame.K_LEFT]['start']))
-        # if self.key_hold_state[pygame.K_LEFT]:
-        #     self.direction -= ROTATE_VALUE  # Rotate 1 degree left
-        # if self.key_hold_state[pygame.K_RIGHT]:
-        #     self.direction += ROTATE_VALUE  # Rotate 1 degree right
+        # self.direction = (ROTATE_VALUE*(self.key_hold_time[pygame.K_RIGHT]['end'] - self.key_hold_time[pygame.K_RIGHT]['start']) \
+        #     - ROTATE_VALUE*(self.key_hold_time[pygame.K_LEFT]['end'] - self.key_hold_time[pygame.K_LEFT]['start']))
+        if self.get_state():
+            fps = self.get_state()[4]
+        else:
+            fps = 35
+        spf = 1/fps
+
+        if self.key_hold_state[pygame.K_LEFT]:
+            self.direction += ROTATE_VALUE*spf  # Rotate 1 degree left 
+        if self.key_hold_state[pygame.K_RIGHT]:
+            self.direction -= ROTATE_VALUE*spf  # Rotate 1 degree right
 
         # Ensure the direction is within 0-359 degrees
         self.direction %= 360
@@ -164,16 +171,17 @@ class KeyboardPlayerPyGame(Player):
         move_x, move_y = 0, 0
         if self.key_hold_state[pygame.K_UP] or self.key_hold_state[pygame.K_DOWN]:
             move_amount = MOVE_VALUE if self.key_hold_state[pygame.K_UP] else -MOVE_VALUE
-            move_x = int(np.round(move_amount * np.cos(np.deg2rad(self.direction))))
-            move_y = int(np.round(move_amount * np.sin(np.deg2rad(self.direction))))
+            move_x = move_amount * np.cos(np.deg2rad(self.direction))
+            move_y = move_amount * np.sin(np.deg2rad(self.direction))
+        self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
+        # # Update the player's position on the map
+        # self.player_position = (
+        #     max(0, min(self.player_position[0] + move_x, self.map_size[0] - 1)),
+        #     max(0, min(self.player_position[1] + move_y, self.map_size[1] - 1))
+        # )
 
-        # Update the player's position on the map
-        self.player_position = (
-            max(0, min(self.player_position[0] + move_x, self.map_size[0] - 1)),
-            max(0, min(self.player_position[1] + move_y, self.map_size[1] - 1))
-        )
-
-        self.draw_map()
+        #self.draw_map()
+        print(f'X: {self.player_position[0]} Y:{self.player_position[1]} W: {self.direction}')
 
     def draw_map(self, color=[255, 255, 255]):
         # Determine the size of the window we are using to display the map
