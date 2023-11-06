@@ -2,10 +2,11 @@ from vis_nav_game import Player, Action
 import pygame
 import cv2
 import numpy as np
+import sys
 from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, compare_histograms, process_image_and_find_best_match
 
 ROTATE_VALUE = 128
-MOVE_VALUE = 1
+MOVE_VALUE = 10
 
 class KeyboardPlayerPyGame(Player):
     def __init__(self):
@@ -17,11 +18,14 @@ class KeyboardPlayerPyGame(Player):
         self.visual_dictionary = None
         self.histograms = None
 
+        self.poses = []
+
         # Initialize the map data
         self.map_size = (1000, 1000, 3)  # Example size for a larger map
         self.map_data = np.zeros(self.map_size, dtype=np.uint8)
         self.direction = 0  # Represents the current angle in degrees
         self.map_scale = 4  # Each unit in the map_data will be a 4x4 pixel square in the OpenCV window
+
         #self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2) # Start in the middle of the map
         self.player_position = (0,0)
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
@@ -74,6 +78,7 @@ class KeyboardPlayerPyGame(Player):
 
     def show_target_images(self):
         self.player_position = (0,0)
+        self.direction = 0
         targets = self.get_target_images()
         best_indexes = [[]]
         for target in targets:
@@ -93,11 +98,6 @@ class KeyboardPlayerPyGame(Player):
         concat_img_target = cv2.vconcat([hor1_target, hor2_target])
 
         w, h = concat_img_target.shape[:2]
-        
-        color = (0, 0, 0)
-
-        concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
-        concat_img_target = cv2.line(concat_img_target, (0, int(w/2)), (h, int(w/2)), color, 2)
 
         w_offset = 25
         h_offset = 10
@@ -105,14 +105,25 @@ class KeyboardPlayerPyGame(Player):
         line = cv2.LINE_AA
         size = 0.75
         stroke = 1
+        color = (0, 0, 0)
+
+        cv2.putText(concat_img, f'X: {self.poses[best_indexes[1][0]][0]:.2f} Y: {self.poses[best_indexes[1][0]][1]:.2f} W: {self.poses[best_indexes[1][0]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img, f'X: {self.poses[best_indexes[2][0]][0]:.2f} Y: {self.poses[best_indexes[2][0]][1]:.2f} W: {self.poses[best_indexes[2][0]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img, f'X: {self.poses[best_indexes[3][0]][0]:.2f} Y: {self.poses[best_indexes[3][0]][1]:.2f} W: {self.poses[best_indexes[3][0]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img, f'X: {self.poses[best_indexes[4][0]][0]:.2f} Y: {self.poses[best_indexes[4][0]][1]:.2f} W: {self.poses[best_indexes[4][0]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        
+        
+        concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
+        concat_img_target = cv2.line(concat_img_target, (0, int(w/2)), (h, int(w/2)), color, 2)
+
 
         cv2.putText(concat_img_target, 'Front View', (h_offset, w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Right View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
 
-        cv2.imshow(f'KeyboardPlayer:target_images', concat_img_target)
-        cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
+        cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.hconcat([concat_img,concat_img_target]))
+        #cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
         cv2.waitKey(1)
 
     def set_target_images(self, images):
@@ -123,7 +134,7 @@ class KeyboardPlayerPyGame(Player):
 
     def pre_navigation_fuck_you(self) -> None:
         if len(self.images) != 0:
-            print(f"Finding descriptors for {len(self.images)} images")
+            print(f"\nFinding descriptors for {len(self.images)} images, with {len(self.poses)} possible poses")
             keypoints,descriptors = extract_sift_features(self.images)
             print(f"Creating dictionary for images")
             self.visual_dictionary = create_visual_dictionary(np.vstack(descriptors), num_clusters=100)
@@ -160,6 +171,7 @@ class KeyboardPlayerPyGame(Player):
 
         pygame.display.set_caption("KeyboardPlayer:fpv")
         self.images.append(fpv)
+        self.poses.append([self.player_position[0],self.player_position[1],self.direction])
         rgb = convert_opencv_img_to_pygame(fpv)
         self.screen.blit(rgb, (0, 0))
         pygame.display.update()
@@ -186,8 +198,8 @@ class KeyboardPlayerPyGame(Player):
         move_x, move_y = 0, 0
         if self.key_hold_state[pygame.K_UP] or self.key_hold_state[pygame.K_DOWN]:
             move_amount = MOVE_VALUE if self.key_hold_state[pygame.K_UP] else -MOVE_VALUE
-            move_x = move_amount * np.cos(np.deg2rad(self.direction))
-            move_y = move_amount * np.sin(np.deg2rad(self.direction))
+            move_x = move_amount*spf * np.cos(np.deg2rad(self.direction))
+            move_y = move_amount*spf * np.sin(np.deg2rad(self.direction))
         # print(f'move_x: {move_x} move_y: {move_y}')
         self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
         # # Update the player's position on the map
@@ -197,7 +209,8 @@ class KeyboardPlayerPyGame(Player):
         # )
 
         #self.draw_map()
-        print(f'X: {self.player_position[0]} Y:{self.player_position[1]} W: {self.direction}')
+        sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
+        sys.stdout.flush()
 
     def draw_map(self, color=[255, 255, 255]):
         # Determine the size of the window we are using to display the map
