@@ -5,8 +5,8 @@ import numpy as np
 import sys
 from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, compare_histograms, process_image_and_find_best_match
 
-ROTATE_VALUE = 128
-MOVE_VALUE = 10
+ROTATE_VALUE = 2.415
+MOVE_VALUE = 5
 
 class KeyboardPlayerPyGame(Player):
     def __init__(self):
@@ -89,9 +89,13 @@ class KeyboardPlayerPyGame(Player):
         if targets is None or len(targets) <= 0:
             return
         
-        hor1 = cv2.vconcat([self.images[best_indexes[1][0]],self.images[best_indexes[2][0]]])
-        hor2 = cv2.vconcat([self.images[best_indexes[3][0]],self.images[best_indexes[4][0]]])
-        concat_img = cv2.hconcat([hor1, hor2])
+        hor1 = cv2.hconcat([self.images[best_indexes[1][0]],self.images[best_indexes[2][0]]])
+        hor2 = cv2.hconcat([self.images[best_indexes[3][0]],self.images[best_indexes[4][0]]])
+        concat_img = cv2.vconcat([hor1, hor2])
+
+        hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]],self.images[best_indexes[2][1]]])
+        hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]],self.images[best_indexes[4][1]]])
+        concat_img_second_best = cv2.vconcat([hor1_second_best, hor2_second_best])
 
         hor1_target = cv2.hconcat(targets[:2])
         hor2_target = cv2.hconcat(targets[2:])
@@ -111,6 +115,11 @@ class KeyboardPlayerPyGame(Player):
         cv2.putText(concat_img, f'X: {self.poses[best_indexes[2][0]][0]:.2f} Y: {self.poses[best_indexes[2][0]][1]:.2f} W: {self.poses[best_indexes[2][0]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
         cv2.putText(concat_img, f'X: {self.poses[best_indexes[3][0]][0]:.2f} Y: {self.poses[best_indexes[3][0]][1]:.2f} W: {self.poses[best_indexes[3][0]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
         cv2.putText(concat_img, f'X: {self.poses[best_indexes[4][0]][0]:.2f} Y: {self.poses[best_indexes[4][0]][1]:.2f} W: {self.poses[best_indexes[4][0]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+
+        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[1][1]][0]:.2f} Y: {self.poses[best_indexes[1][1]][1]:.2f} W: {self.poses[best_indexes[1][1]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[2][1]][0]:.2f} Y: {self.poses[best_indexes[2][1]][1]:.2f} W: {self.poses[best_indexes[2][1]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[3][1]][0]:.2f} Y: {self.poses[best_indexes[3][1]][1]:.2f} W: {self.poses[best_indexes[3][1]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[4][1]][0]:.2f} Y: {self.poses[best_indexes[4][1]][1]:.2f} W: {self.poses[best_indexes[4][1]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
         
         
         concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
@@ -122,7 +131,7 @@ class KeyboardPlayerPyGame(Player):
         cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
 
-        cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.hconcat([concat_img,concat_img_target]))
+        cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.hconcat([concat_img,concat_img_second_best,concat_img_target]))
         #cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
         cv2.waitKey(1)
 
@@ -145,7 +154,7 @@ class KeyboardPlayerPyGame(Player):
         targets = self.get_target_images()
         for target in targets:
             best_indexes = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
-            cv2.imshow("best target", self.images[best_indexes[0]])
+            # cv2.imshow("best target", self.images[best_indexes[0]])
 
     def see(self, fpv):
         if fpv is None or len(fpv.shape) < 3:
@@ -180,16 +189,16 @@ class KeyboardPlayerPyGame(Player):
         # Rotate left or right based on the current key hold state
         # self.direction = (ROTATE_VALUE*(self.key_hold_time[pygame.K_RIGHT]['end'] - self.key_hold_time[pygame.K_RIGHT]['start']) \
         #     - ROTATE_VALUE*(self.key_hold_time[pygame.K_LEFT]['end'] - self.key_hold_time[pygame.K_LEFT]['start']))
-        if self.get_state():
-            fps = self.get_state()[4]
-        else:
-            fps = 35
-        spf = 1/fps
+        # if self.get_state():
+        #     fps = self.get_state()[4]
+        # else:
+        #     fps = 35
+        # spf = 1/fps
 
         if self.key_hold_state[pygame.K_LEFT]:
-            self.direction += ROTATE_VALUE*spf  # Rotate 1 degree left 
+            self.direction += ROTATE_VALUE  # Rotate 1 degree left 
         if self.key_hold_state[pygame.K_RIGHT]:
-            self.direction -= ROTATE_VALUE*spf  # Rotate 1 degree right
+            self.direction -= ROTATE_VALUE  # Rotate 1 degree right
 
         # Ensure the direction is within 0-359 degrees
         self.direction %= 360
@@ -198,8 +207,8 @@ class KeyboardPlayerPyGame(Player):
         move_x, move_y = 0, 0
         if self.key_hold_state[pygame.K_UP] or self.key_hold_state[pygame.K_DOWN]:
             move_amount = MOVE_VALUE if self.key_hold_state[pygame.K_UP] else -MOVE_VALUE
-            move_x = move_amount*spf * np.cos(np.deg2rad(self.direction))
-            move_y = move_amount*spf * np.sin(np.deg2rad(self.direction))
+            move_x = move_amount * np.cos(np.deg2rad(self.direction))
+            move_y = move_amount * np.sin(np.deg2rad(self.direction))
         # print(f'move_x: {move_x} move_y: {move_y}')
         self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
         # # Update the player's position on the map
