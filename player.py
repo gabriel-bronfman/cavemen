@@ -52,10 +52,12 @@ class KeyboardPlayerPyGame(Player):
             pygame.K_UP: Action.FORWARD,
             pygame.K_DOWN: Action.BACKWARD,
             pygame.K_SPACE: Action.CHECKIN,
-            pygame.K_ESCAPE: Action.QUIT
+            pygame.K_ESCAPE: Action.QUIT,
+            pygame.K_p: 1
         }
 
     def act(self):
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -64,14 +66,22 @@ class KeyboardPlayerPyGame(Player):
 
             if event.type == pygame.KEYDOWN:
                 if event.key in self.keymap:
-                    self.key_hold_state[event.key] = True
-                    self.last_act |= self.keymap[event.key]
+                    if event.key == pygame.K_p:
+                        self.pre_navigation_fuck_you()
+                    else:
+                        self.key_hold_state[event.key] = True
+                        self.last_act |= self.keymap[event.key]
+                    
                 else:
+                    
                     self.show_target_images()
             if event.type == pygame.KEYUP:
                 if event.key in self.keymap:
-                    self.key_hold_state[event.key] = False
-                    self.last_act ^= self.keymap[event.key]
+                    if event.key == pygame.K_p:
+                        pass
+                    else:
+                        self.key_hold_state[event.key] = False
+                        self.last_act ^= self.keymap[event.key]
         
         self.update_map_on_keypress()
         return self.last_act
@@ -217,6 +227,7 @@ class KeyboardPlayerPyGame(Player):
         concat_img_third_best = cv2.resize(concat_img_third_best, (0, 0), fx=scale_factor, fy=scale_factor)
         concat_img_target = cv2.resize(concat_img_target, (0, 0), fx=scale_factor, fy=scale_factor)
 
+
         # Settings for text after scaling
         font = cv2.FONT_HERSHEY_SIMPLEX
         line = cv2.LINE_AA
@@ -281,9 +292,19 @@ class KeyboardPlayerPyGame(Player):
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
-        self.pre_navigation_fuck_you()
-        self.find_targets()
+        # self.pre_navigation_fuck_you()
+        # self.find_targets()
         self.show_target_images()
+
+
+    def pre_navigation(self):
+        print("pre_nav")
+        targets = self.get_target_images()
+
+
+
+
+
 
     def pre_navigation_fuck_you(self) -> None:
         if len(self.images) != 0:
