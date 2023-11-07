@@ -86,6 +86,93 @@ class KeyboardPlayerPyGame(Player):
         self.update_map_on_keypress()
         return self.last_act
 
+    # def show_target_images(self):
+    #     self.player_position = (0,0)
+    #     self.direction = 0
+    #     targets = self.get_target_images()
+    #     best_indexes = [[]]
+    #     for target in targets:
+    #         best_index = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
+
+    #         best_indexes.append(best_index)
+
+    #     if targets is None or len(targets) <= 0:
+    #         return
+        
+    #     hor1 = cv2.hconcat([self.images[best_indexes[1][0]],self.images[best_indexes[2][0]]])
+    #     hor2 = cv2.hconcat([self.images[best_indexes[3][0]],self.images[best_indexes[4][0]]])
+    #     concat_img = cv2.vconcat([hor1, hor2])
+
+    #     hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]],self.images[best_indexes[2][1]]])
+    #     hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]],self.images[best_indexes[4][1]]])
+    #     concat_img_second_best = cv2.vconcat([hor1_second_best, hor2_second_best])
+
+    #     hor1_target = cv2.hconcat(targets[:2])
+    #     hor2_target = cv2.hconcat(targets[2:])
+    #     concat_img_target = cv2.vconcat([hor1_target, hor2_target])
+
+    #     hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]],self.images[best_indexes[2][2]]])
+    #     hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]],self.images[best_indexes[4][2]]])
+    #     concat_img_third_best = cv2.vconcat([hor1_third_best, hor2_third_best])
+
+    #     hor1_target = cv2.hconcat(targets[:2])
+    #     hor2_target = cv2.hconcat(targets[2:])
+    #     concat_img_target = cv2.vconcat([hor1_target, hor2_target])
+
+    #     w, h = concat_img_target.shape[:2]
+
+    #     w_offset = 25
+    #     h_offset = 10
+    #     font = cv2.FONT_HERSHEY_SIMPLEX
+    #     line = cv2.LINE_AA
+    #     size = 0.75
+    #     stroke = 1
+    #     color = (0, 0, 0)
+
+    #     scale_factor = 2  # Change this factor to whatever suits your needs
+
+    #     # Resize images to double their size for better visibility
+    #     concat_img = cv2.resize(concat_img, (0, 0), fx=scale_factor, fy=scale_factor)
+    #     concat_img_second_best = cv2.resize(concat_img_second_best, (0, 0), fx=scale_factor, fy=scale_factor)
+    #     concat_img_third_best = cv2.resize(concat_img_third_best, (0, 0), fx=scale_factor, fy=scale_factor)
+    #     concat_img_target = cv2.resize(concat_img_target, (0, 0), fx=scale_factor, fy=scale_factor)
+        
+        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[1][0]][0]:.2f} Y: {self.poses[best_indexes[1][0]][1]:.2f} W: {self.poses[best_indexes[1][0]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[2][0]][0]:.2f} Y: {self.poses[best_indexes[2][0]][1]:.2f} W: {self.poses[best_indexes[2][0]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[3][0]][0]:.2f} Y: {self.poses[best_indexes[3][0]][1]:.2f} W: {self.poses[best_indexes[3][0]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[4][0]][0]:.2f} Y: {self.poses[best_indexes[4][0]][1]:.2f} W: {self.poses[best_indexes[4][0]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+
+        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[1][1]][0]:.2f} Y: {self.poses[best_indexes[1][1]][1]:.2f} W: {self.poses[best_indexes[1][1]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[2][1]][0]:.2f} Y: {self.poses[best_indexes[2][1]][1]:.2f} W: {self.poses[best_indexes[2][1]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[3][1]][0]:.2f} Y: {self.poses[best_indexes[3][1]][1]:.2f} W: {self.poses[best_indexes[3][1]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[4][1]][0]:.2f} Y: {self.poses[best_indexes[4][1]][1]:.2f} W: {self.poses[best_indexes[4][1]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+
+        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[1][2]][0]:.2f} Y: {self.poses[best_indexes[1][2]][1]:.2f} W: {self.poses[best_indexes[1][2]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[2][2]][0]:.2f} Y: {self.poses[best_indexes[2][2]][1]:.2f} W: {self.poses[best_indexes[2][2]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[3][2]][0]:.2f} Y: {self.poses[best_indexes[3][2]][1]:.2f} W: {self.poses[best_indexes[3][2]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[4][2]][0]:.2f} Y: {self.poses[best_indexes[4][2]][1]:.2f} W: {self.poses[best_indexes[4][2]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        
+        
+    #     concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
+    #     concat_img_target = cv2.line(concat_img_target, (0, int(w/2)), (h, int(w/2)), color, 2)
+
+
+    #     cv2.putText(concat_img_target, 'Front View', (h_offset, w_offset), font, size, color, stroke, line)
+    #     cv2.putText(concat_img_target, 'Right View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
+    #     cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
+    #     cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
+        
+    #     # Concatenate the images again after resizing
+    #     top_row = cv2.hconcat([concat_img, concat_img_second_best])
+    #     bottom_row = cv2.hconcat([concat_img_third_best, concat_img_target])
+
+    #     cv2.namedWindow('KeyboardPlayer:targets and recognized', cv2.WINDOW_NORMAL)  # Create a resizable window
+    #     cv2.resizeWindow('KeyboardPlayer:targets and recognized', top_row.shape[1], top_row.shape[0] + bottom_row.shape[0])  # Set the window size
+
+    #     # Display the image
+    #     cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
+    #     cv2.waitKey(1)
+
     def show_target_images(self):
         self.player_position = (0,0)
         self.direction = 0
@@ -93,34 +180,35 @@ class KeyboardPlayerPyGame(Player):
         best_indexes = [[]]
         for target in targets:
             best_index = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
-
             best_indexes.append(best_index)
 
-        if targets is None or len(targets) <= 0:
+        if targets is None or len(targets) == 0:
             return
-        
-        hor1 = cv2.hconcat([self.images[best_indexes[1][0]],self.images[best_indexes[2][0]]])
-        hor2 = cv2.hconcat([self.images[best_indexes[3][0]],self.images[best_indexes[4][0]]])
+
+        # Concatenate best match images in pairs horizontally and then vertically
+        hor1 = cv2.hconcat([self.images[best_indexes[1][0]], self.images[best_indexes[2][0]]])
+        hor2 = cv2.hconcat([self.images[best_indexes[3][0]], self.images[best_indexes[4][0]]])
         concat_img = cv2.vconcat([hor1, hor2])
 
-        hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]],self.images[best_indexes[2][1]]])
-        hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]],self.images[best_indexes[4][1]]])
+        # Concatenate second best match images similarly as above
+        hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]], self.images[best_indexes[2][1]]])
+        hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]], self.images[best_indexes[4][1]]])
         concat_img_second_best = cv2.vconcat([hor1_second_best, hor2_second_best])
 
+        # Concatenate target images similarly as above
         hor1_target = cv2.hconcat(targets[:2])
         hor2_target = cv2.hconcat(targets[2:])
         concat_img_target = cv2.vconcat([hor1_target, hor2_target])
 
-        hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]],self.images[best_indexes[2][2]]])
-        hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]],self.images[best_indexes[4][2]]])
+        # Concatenate third best match images similarly as above
+        hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]], self.images[best_indexes[2][2]]])
+        hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]], self.images[best_indexes[4][2]]])
         concat_img_third_best = cv2.vconcat([hor1_third_best, hor2_third_best])
 
-        hor1_target = cv2.hconcat(targets[:2])
-        hor2_target = cv2.hconcat(targets[2:])
-        concat_img_target = cv2.vconcat([hor1_target, hor2_target])
-
+        # Get width and height for text placement before scaling
         w, h = concat_img_target.shape[:2]
 
+        # Settings for text
         w_offset = 25
         h_offset = 10
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -129,57 +217,78 @@ class KeyboardPlayerPyGame(Player):
         stroke = 1
         color = (0, 0, 0)
 
-        scale_factor = 2  # Change this factor to whatever suits your needs
+        # Scaling factor for the images
+        scale_factor = 2
+        text_scale_factor = 1.5
 
-        # Resize images to double their size for better visibility
+        # Resize images with scale factor
         concat_img = cv2.resize(concat_img, (0, 0), fx=scale_factor, fy=scale_factor)
         concat_img_second_best = cv2.resize(concat_img_second_best, (0, 0), fx=scale_factor, fy=scale_factor)
         concat_img_third_best = cv2.resize(concat_img_third_best, (0, 0), fx=scale_factor, fy=scale_factor)
         concat_img_target = cv2.resize(concat_img_target, (0, 0), fx=scale_factor, fy=scale_factor)
 
-        # Concatenate the images again after resizing
-        
-        
-        cv2.putText(concat_img, f'X: {self.poses[best_indexes[1][0]][0]:.2f} Y: {self.poses[best_indexes[1][0]][1]:.2f} W: {self.poses[best_indexes[1][0]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img, f'X: {self.poses[best_indexes[2][0]][0]:.2f} Y: {self.poses[best_indexes[2][0]][1]:.2f} W: {self.poses[best_indexes[2][0]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img, f'X: {self.poses[best_indexes[3][0]][0]:.2f} Y: {self.poses[best_indexes[3][0]][1]:.2f} W: {self.poses[best_indexes[3][0]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img, f'X: {self.poses[best_indexes[4][0]][0]:.2f} Y: {self.poses[best_indexes[4][0]][1]:.2f} W: {self.poses[best_indexes[4][0]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
 
-        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[1][1]][0]:.2f} Y: {self.poses[best_indexes[1][1]][1]:.2f} W: {self.poses[best_indexes[1][1]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[2][1]][0]:.2f} Y: {self.poses[best_indexes[2][1]][1]:.2f} W: {self.poses[best_indexes[2][1]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[3][1]][0]:.2f} Y: {self.poses[best_indexes[3][1]][1]:.2f} W: {self.poses[best_indexes[3][1]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[4][1]][0]:.2f} Y: {self.poses[best_indexes[4][1]][1]:.2f} W: {self.poses[best_indexes[4][1]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        # Settings for text after scaling
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        line = cv2.LINE_AA
+        color = (0, 0, 255)  # Red color for visibility
 
-        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[1][2]][0]:.2f} Y: {self.poses[best_indexes[1][2]][1]:.2f} W: {self.poses[best_indexes[1][2]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[2][2]][0]:.2f} Y: {self.poses[best_indexes[2][2]][1]:.2f} W: {self.poses[best_indexes[2][2]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[3][2]][0]:.2f} Y: {self.poses[best_indexes[3][2]][1]:.2f} W: {self.poses[best_indexes[3][2]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[4][2]][0]:.2f} Y: {self.poses[best_indexes[4][2]][1]:.2f} W: {self.poses[best_indexes[4][2]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        
-        
-        concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
-        concat_img_target = cv2.line(concat_img_target, (0, int(w/2)), (h, int(w/2)), color, 2)
+        # Scale offsets and stroke for the scaled image
+        scaled_w_offset = int(w_offset * scale_factor)
+        scaled_h_offset = int(h_offset * scale_factor)
+        scaled_font_size = size * text_scale_factor
+        scaled_stroke = int(stroke * scale_factor)
 
+        # Calculate positions for text based on scaled image size
+        position_front_view = (scaled_w_offset, scaled_h_offset)
+        position_right_view = (int(concat_img_target.shape[1]/2) + scaled_w_offset, scaled_h_offset)
+        position_back_view = (scaled_w_offset, int(concat_img_target.shape[0]/2) + scaled_h_offset)
+        position_left_view = (int(concat_img_target.shape[1]/2) + scaled_w_offset, int(concat_img_target.shape[0]/2) + scaled_h_offset)
 
-        cv2.putText(concat_img_target, 'Front View', (h_offset, w_offset), font, size, color, stroke, line)
-        cv2.putText(concat_img_target, 'Right View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
-        cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
-        cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
+        # Place text for views on the target image
+        cv2.putText(concat_img_target, 'Front View', position_front_view, font, scaled_font_size, color, scaled_stroke, line)
+        cv2.putText(concat_img_target, 'Right View', position_right_view, font, scaled_font_size, color, scaled_stroke, line)
+        cv2.putText(concat_img_target, 'Back View', position_back_view, font, scaled_font_size, color, scaled_stroke, line)
+        cv2.putText(concat_img_target, 'Left View', position_left_view, font, scaled_font_size, color, scaled_stroke, line)
 
+        # Now, apply the text with correct scaling and positioning
+        for index in range(1, 5):  # Loop through the indexes
+            for rank in range(3):  # Loop through the ranks: best, second best, third best
+                # Choose the correct image based on rank
+                if rank == 0:
+                    image_to_draw = concat_img
+                elif rank == 1:
+                    image_to_draw = concat_img_second_best
+                else:
+                    image_to_draw = concat_img_third_best
+                
+                # Calculate the position for the text based on the image quadrant
+                x_offset = h_offset if (index % 2) != 0 else int(w/2) + h_offset  # Left if 1 or 3, right if 2 or 4
+                y_offset = w_offset if index < 3 else int(w/2) + w_offset  # Top if 1 or 2, bottom if 3 or 4
+
+                # Draw the text with the scaled positions and sizes
+                cv2.putText(image_to_draw, 
+                            f'X: {self.poses[best_indexes[index][rank]][0]:.2f} Y: {self.poses[best_indexes[index][rank]][1]:.2f} W: {self.poses[best_indexes[index][rank]][2]:.2f}\t', 
+                            (x_offset * scale_factor, y_offset * scale_factor),  # Scaled offset
+                            font, 
+                            scaled_font_size, 
+                            color, 
+                            scaled_stroke, 
+                            line)
+        # Concatenate the images again for the final display
         top_row = cv2.hconcat([concat_img, concat_img_second_best])
         bottom_row = cv2.hconcat([concat_img_third_best, concat_img_target])
 
-        # top_row = cv2.hconcat([concat_img,concat_img_second_best])
-        # bottom_row = cv2.hconcat([concat_img_third_best,concat_img_target])
-        # cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.vconcat([top_row,bottom_row]))
-        # #cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
-        # cv2.waitKey(1)
-        # Show in a window
+        # Create and resize window for display
         cv2.namedWindow('KeyboardPlayer:targets and recognized', cv2.WINDOW_NORMAL)  # Create a resizable window
-        cv2.resizeWindow('KeyboardPlayer:targets and recognized', top_row.shape[1], top_row.shape[0] + bottom_row.shape[0])  # Set the window size
+        cv2.resizeWindow('KeyboardPlayer:targets and recognized', top_row.shape[1], top_row.shape[0])  # Set the window size
 
         # Display the image
         cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
         cv2.waitKey(1)
+
+
+
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
