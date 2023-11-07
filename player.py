@@ -219,7 +219,7 @@ class KeyboardPlayerPyGame(Player):
 
         # Scaling factor for the images
         scale_factor = 2
-        text_scale_factor = 1.5
+        text_scale_factor = 1.3
 
         # Resize images with scale factor
         concat_img = cv2.resize(concat_img, (0, 0), fx=scale_factor, fy=scale_factor)
