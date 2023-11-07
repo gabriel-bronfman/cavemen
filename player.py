@@ -101,6 +101,14 @@ class KeyboardPlayerPyGame(Player):
         hor2_target = cv2.hconcat(targets[2:])
         concat_img_target = cv2.vconcat([hor1_target, hor2_target])
 
+        hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]],self.images[best_indexes[2][2]]])
+        hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]],self.images[best_indexes[4][2]]])
+        concat_img_third_best = cv2.vconcat([hor1_third_best, hor2_third_best])
+
+        hor1_target = cv2.hconcat(targets[:2])
+        hor2_target = cv2.hconcat(targets[2:])
+        concat_img_target = cv2.vconcat([hor1_target, hor2_target])
+
         w, h = concat_img_target.shape[:2]
 
         w_offset = 25
@@ -120,6 +128,11 @@ class KeyboardPlayerPyGame(Player):
         cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[2][1]][0]:.2f} Y: {self.poses[best_indexes[2][1]][1]:.2f} W: {self.poses[best_indexes[2][1]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
         cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[3][1]][0]:.2f} Y: {self.poses[best_indexes[3][1]][1]:.2f} W: {self.poses[best_indexes[3][1]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
         cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[4][1]][0]:.2f} Y: {self.poses[best_indexes[4][1]][1]:.2f} W: {self.poses[best_indexes[4][1]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+
+        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[1][2]][0]:.2f} Y: {self.poses[best_indexes[1][2]][1]:.2f} W: {self.poses[best_indexes[1][2]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[2][2]][0]:.2f} Y: {self.poses[best_indexes[2][2]][1]:.2f} W: {self.poses[best_indexes[2][2]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[3][2]][0]:.2f} Y: {self.poses[best_indexes[3][2]][1]:.2f} W: {self.poses[best_indexes[3][2]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
+        cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[4][2]][0]:.2f} Y: {self.poses[best_indexes[4][2]][1]:.2f} W: {self.poses[best_indexes[4][2]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
         
         
         concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
@@ -130,8 +143,9 @@ class KeyboardPlayerPyGame(Player):
         cv2.putText(concat_img_target, 'Right View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
-
-        cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.hconcat([concat_img,concat_img_second_best,concat_img_target]))
+        top_row = cv2.hconcat([concat_img,concat_img_second_best])
+        bottom_row = cv2.hconcat([concat_img_third_best,concat_img_target])
+        cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.vconcat([top_row,bottom_row]))
         #cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
         cv2.waitKey(1)
 
