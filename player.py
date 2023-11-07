@@ -119,6 +119,18 @@ class KeyboardPlayerPyGame(Player):
         stroke = 1
         color = (0, 0, 0)
 
+        scale_factor = 2  # Change this factor to whatever suits your needs
+
+        # Resize images to double their size for better visibility
+        concat_img = cv2.resize(concat_img, (0, 0), fx=scale_factor, fy=scale_factor)
+        concat_img_second_best = cv2.resize(concat_img_second_best, (0, 0), fx=scale_factor, fy=scale_factor)
+        concat_img_third_best = cv2.resize(concat_img_third_best, (0, 0), fx=scale_factor, fy=scale_factor)
+        concat_img_target = cv2.resize(concat_img_target, (0, 0), fx=scale_factor, fy=scale_factor)
+
+        # Concatenate the images again after resizing
+        top_row = cv2.hconcat([concat_img, concat_img_second_best])
+        bottom_row = cv2.hconcat([concat_img_third_best, concat_img_target])
+        
         cv2.putText(concat_img, f'X: {self.poses[best_indexes[1][0]][0]:.2f} Y: {self.poses[best_indexes[1][0]][1]:.2f} W: {self.poses[best_indexes[1][0]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
         cv2.putText(concat_img, f'X: {self.poses[best_indexes[2][0]][0]:.2f} Y: {self.poses[best_indexes[2][0]][1]:.2f} W: {self.poses[best_indexes[2][0]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
         cv2.putText(concat_img, f'X: {self.poses[best_indexes[3][0]][0]:.2f} Y: {self.poses[best_indexes[3][0]][1]:.2f} W: {self.poses[best_indexes[3][0]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
@@ -143,10 +155,17 @@ class KeyboardPlayerPyGame(Player):
         cv2.putText(concat_img_target, 'Right View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
         cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
-        top_row = cv2.hconcat([concat_img,concat_img_second_best])
-        bottom_row = cv2.hconcat([concat_img_third_best,concat_img_target])
-        cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.vconcat([top_row,bottom_row]))
-        #cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
+        # top_row = cv2.hconcat([concat_img,concat_img_second_best])
+        # bottom_row = cv2.hconcat([concat_img_third_best,concat_img_target])
+        # cv2.imshow(f'KeyboardPlayer:targets and recognized', cv2.vconcat([top_row,bottom_row]))
+        # #cv2.imshow(f'KeyboardPlayer:Recognized Location', concat_img)
+        # cv2.waitKey(1)
+        # Show in a window
+        cv2.namedWindow('KeyboardPlayer:targets and recognized', cv2.WINDOW_NORMAL)  # Create a resizable window
+        cv2.resizeWindow('KeyboardPlayer:targets and recognized', top_row.shape[1], top_row.shape[0] + bottom_row.shape[0])  # Set the window size
+
+        # Display the image
+        cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
         cv2.waitKey(1)
 
     def set_target_images(self, images):
