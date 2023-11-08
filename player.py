@@ -73,11 +73,12 @@ class KeyboardPlayerPyGame(Player):
             if event.type == pygame.KEYDOWN:
                 if event.key in self.keymap:
                     if event.key == pygame.K_p:
-                        self.pre_navigation_fuck_you()
+                        self.pre_navigation_bypass()
                     elif event.key == pygame.K_r:
                         self.player_position = (0,0)
                     elif event.key == pygame.K_t:
                         self.direction = 0
+
                     else:
                         self.key_hold_state[event.key] = True
                         self.last_act |= self.keymap[event.key]
@@ -305,7 +306,7 @@ class KeyboardPlayerPyGame(Player):
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
-        # self.pre_navigation_fuck_you()
+        # self.pre_navigation_bypass()
         # self.find_targets()
         self.show_target_images()
 
@@ -319,8 +320,7 @@ class KeyboardPlayerPyGame(Player):
 
 
 
-    def pre_navigation_fuck_you(self) -> None:
-        
+    def pre_navigation_bypass(self) -> None:
         if len(self.images) != 0:
             if self.self_validate:
                 index = random.randint(10,len(self.images)-10)
