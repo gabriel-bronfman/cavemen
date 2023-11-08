@@ -21,7 +21,7 @@
 
 ## Abstract
     
-This repository contains the source code for submission made by the team `Shoob and Goob`. The goal of the project is to map and localize views in previously unexplored 3D worlds. We implement the Dead Reckoning algorithm to keep track of the movement from the given origin. We extract features of the 3D world using the ORB-SLAM3 feature extractor which is then used to train a Visual Bag of Words on all scenes seen by the robot during the exploration phase. We are able to localize the target scene before the navigation phase begins with the coordinates and rotation.
+This repository contains the source code for submission made by the team `Shoob and Goob`. The goal of the project is to map and localize views in previously unexplored 3D worlds. We implement the Dead Reckoning algorithm to keep track of the movement from the given origin. We extract ORB features of the 3D world which is then used to train a Visual Bag of Words on all scenes seen by the robot during the exploration phase. We are able to localize the target scene before the navigation phase begins with the coordinates and rotation.
 
 ## Installation
 **NOTE**: The instructions have been tested on a M1 Macbook pro.
