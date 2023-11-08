@@ -11,13 +11,7 @@
     <div style="display: flex; justify-content: center;">
         <!-- First image with title -->
         <div style="margin-right: 10px;">
-        <img src="./assets/exploration.png" alt="First Image" style="width: 270px; height: auto;"/>
-        <p align="center">(a)</p>
-        </div>
-        <!-- Second image with title -->
-        <div style="margin-left: 10px;">
-        <img src="./assets/navigation.png" alt="Second Image" style="width: 400px; height: auto;"/>
-        <p align="center">(b)</p>
+        <img src="./assets/teaser.png" alt="First Image" style="width: auto; height: auto;"/>
         </div>
     </div>
     <b>(a)</b> The data structure overview of how mapping is done in the exploration phase. <b>(b)</b> The top 12 resulting targets and their corresponding (x,y,w) which is the displacement in the x, y axis and rotation. The bottom four images show the target front, right, back and left view respectively.
