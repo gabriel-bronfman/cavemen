@@ -3,6 +3,7 @@ import pygame
 import cv2
 import numpy as np
 import sys
+import random
 from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, compare_histograms, process_image_and_find_best_match
 
 ROTATE_VALUE = 2.415
@@ -18,7 +19,10 @@ class KeyboardPlayerPyGame(Player):
         self.visual_dictionary = None
         self.histograms = None
 
+        self.validation_img = None
+
         self.poses = []
+        self.self_validate = False
 
         # Initialize the map data
         self.map_size = (1000, 1000, 3)  # Example size for a larger map
@@ -53,7 +57,9 @@ class KeyboardPlayerPyGame(Player):
             pygame.K_DOWN: Action.BACKWARD,
             pygame.K_SPACE: Action.CHECKIN,
             pygame.K_ESCAPE: Action.QUIT,
-            pygame.K_p: 1
+            pygame.K_p: 1,
+            pygame.K_r: 1,
+            pygame.K_t: 1
         }
 
     def act(self):
@@ -68,6 +74,10 @@ class KeyboardPlayerPyGame(Player):
                 if event.key in self.keymap:
                     if event.key == pygame.K_p:
                         self.pre_navigation_fuck_you()
+                    elif event.key == pygame.K_r:
+                        self.player_position = (0,0)
+                    elif event.key == pygame.K_t:
+                        self.direction = 0
                     else:
                         self.key_hold_state[event.key] = True
                         self.last_act |= self.keymap[event.key]
@@ -77,7 +87,7 @@ class KeyboardPlayerPyGame(Player):
                     self.show_target_images()
             if event.type == pygame.KEYUP:
                 if event.key in self.keymap:
-                    if event.key == pygame.K_p:
+                    if event.key == pygame.K_p or event.key == pygame.K_r or event.key == pygame.K_t:
                         pass
                     else:
                         self.key_hold_state[event.key] = False
@@ -177,6 +187,9 @@ class KeyboardPlayerPyGame(Player):
         self.player_position = (0,0)
         self.direction = 0
         targets = self.get_target_images()
+        if self.self_validate and len(targets) > 0:
+            targets[0] = self.validation_img
+
         best_indexes = [[]]
         for target in targets:
             best_index = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
@@ -219,7 +232,7 @@ class KeyboardPlayerPyGame(Player):
 
         # Scaling factor for the images
         scale_factor = 2
-        text_scale_factor = 1.3
+        text_scale_factor = 1.2
 
         # Resize images with scale factor
         concat_img = cv2.resize(concat_img, (0, 0), fx=scale_factor, fy=scale_factor)
@@ -307,7 +320,15 @@ class KeyboardPlayerPyGame(Player):
 
 
     def pre_navigation_fuck_you(self) -> None:
+        
         if len(self.images) != 0:
+            if self.self_validate:
+                index = random.randint(10,len(self.images)-10)
+                self.validation_img = self.images[index]
+                for i in range(-5,5):
+                    del self.images[index + i]
+                    del self.poses[index + i]
+
             print(f"\nFinding descriptors for {len(self.images)} images, with {len(self.poses)} possible poses")
             keypoints,descriptors = extract_sift_features(self.images)
             print(f"Creating dictionary for images")
