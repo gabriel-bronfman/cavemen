@@ -335,6 +335,8 @@ class KeyboardPlayerPyGame(Player):
         sys.stdout.flush()
 
     def draw_map(self):
+        if self.poses is None or len(self.poses) == 0:
+            return
         # Threshold distance for combining nearby nodes
         threshold_distance = 1.0  # Adjust this value as needed
 
