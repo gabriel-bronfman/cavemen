@@ -5,6 +5,9 @@ import numpy as np
 import sys
 import random
 from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, compare_histograms, process_image_and_find_best_match
+import networkx as nx
+import math
+import matplotlib.pyplot as plt
 
 ROTATE_VALUE = 2.415
 MOVE_VALUE = 5
@@ -46,7 +49,6 @@ class KeyboardPlayerPyGame(Player):
         self.direction = 0
         #self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2)
         self.player_position = (0,0)
-        #self.draw_map(color=[0, 0, 255])
 
         pygame.init()
 
@@ -301,24 +303,18 @@ class KeyboardPlayerPyGame(Player):
         cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
         cv2.waitKey(1)
 
-
-
-
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
         # self.pre_navigation_bypass()
         # self.find_targets()
+        self.draw_map()
+
         self.show_target_images()
 
 
     def pre_navigation(self):
         print("pre_nav")
         targets = self.get_target_images()
-
-
-
-
-
 
     def pre_navigation_bypass(self) -> None:
         if len(self.images) != 0:
@@ -403,43 +399,63 @@ class KeyboardPlayerPyGame(Player):
         #     max(0, min(self.player_position[1] + move_y, self.map_size[1] - 1))
         # )
 
-        #self.draw_map()
         sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
         sys.stdout.flush()
 
-    def draw_map(self, color=[255, 255, 255]):
-        # Determine the size of the window we are using to display the map
-        window_size = self.map_size[:2]  # Size of the map window in pixels
-        if sum(self.map_data[self.player_position[1], self.player_position[0]]) == 0:
-            self.map_data[self.player_position[1], self.player_position[0]] = color
-        # Determine the bounds for the centering effect based on the scale and window size
-        center_bounds = (self.map_size[0] - window_size[0] // self.map_scale,
-                        self.map_size[1] - window_size[1] // self.map_scale)
+    def draw_map(self):
+        # Threshold distance for combining nearby nodes
+        threshold_distance = 1.0  # Adjust this value as needed
 
-        # Get player's position on the map_data
-        player_x, player_y = self.player_position
+        # Combine nearby nodes
+        combined_poses = []
+        for x, y, rotation in self.poses:
+            # Check if this pose is close to any already combined pose
+            close_to_existing = False
+            for i, (cx, cy, crot) in enumerate(combined_poses):
+                if math.sqrt((cx - x)**2 + (cy - y)**2) < threshold_distance:
+                    new_cx = (cx + x) / 2
+                    new_cy = (cy + y) / 2
+                    new_crot = (crot + rotation) / 2
+                    combined_poses[i] = (new_cx, new_cy, new_crot)
+                    close_to_existing = True
+                    break
+            if not close_to_existing:
+                combined_poses.append((x, y, rotation))
 
-        # Calculate the top-left coordinate of the map view
-        top_left_x = max(0, min(player_x - window_size[0] // (2 * self.map_scale), center_bounds[0]))
-        top_left_y = max(0, min(player_y - window_size[1] // (2 * self.map_scale), center_bounds[1]))
+        # Create a directed graph
+        G = nx.DiGraph()
 
-        # Create a view from the map data that corresponds to the current window view
-        view = self.map_data[top_left_y:top_left_y + window_size[1] // self.map_scale,
-                            top_left_x:top_left_x + window_size[0] // self.map_scale]
+        # Add nodes with combined poses
+        for i, (x, y, rotation) in enumerate(combined_poses):
+            G.add_node(i, pos=(x, y), rotation=rotation)
 
-        # Create an image that enlarges the map using the scale factor
-        map_image_large = cv2.resize(view, window_size, interpolation=cv2.INTER_NEAREST)
+        # Add bidirectional edges (assuming sequential connection for this example)
+        for i in range(len(combined_poses) - 1):
+            G.add_edge(i, i + 1)
+            G.add_edge(i + 1, i)
 
-        # Determine the position to draw the player in the view
-        # draw_x = min(max(player_x - top_left_x, 0), window_size[0] // self.map_scale) * self.map_scale
-        # draw_y = min(max(player_y - top_left_y, 0), window_size[1] // self.map_scale) * self.map_scale
+        # Limit each node to at most 4 neighbors
+        for node in list(G.nodes):
+            neighbors = list(G.neighbors(node))
+            if len(neighbors) > 4:
+                for neighbor in neighbors[4:]:
+                    G.remove_edge(node, neighbor)
+                    G.remove_edge(neighbor, node)
 
-        # Draw the player on the map view
-        # map_image_large[draw_y:draw_y+self.map_scale, draw_x:draw_x+self.map_scale] = color  # Mark the new position
+        # Draw the graph
+        pos = nx.get_node_attributes(G, 'pos')
+        rotations = nx.get_node_attributes(G, 'rotation')
+        nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
 
-        # Display the map image using OpenCV
-        cv2.imshow('2D Map', map_image_large)
-        cv2.waitKey(1)  # Refresh the OpenCV window
+        # Add rotation indication to each node
+        for n, (x, y) in pos.items():
+            rotation = rotations[n]
+            dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
+            dy = math.sin(math.radians(rotation)) * 0.1
+            plt.arrow(x, y, dx, dy, head_width=0.05, head_length=0.1, fc='black', ec='black')
+
+        plt.show()
+
 
 
 
