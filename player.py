@@ -24,6 +24,8 @@ class KeyboardPlayerPyGame(Player):
 
         self.validation_img = None
 
+        self.turn_count = 0
+
         self.poses = []
         self.self_validate = False
 
@@ -33,7 +35,7 @@ class KeyboardPlayerPyGame(Player):
         self.direction = 0  # Represents the current angle in degrees
         self.map_scale = 4  # Each unit in the map_data will be a 4x4 pixel square in the OpenCV window
 
-        #self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2) # Start in the middle of the map
+        
         self.player_position = (0,0)
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
@@ -47,7 +49,7 @@ class KeyboardPlayerPyGame(Player):
         # Reset map data
         self.map_data.fill(0)
         self.direction = 0
-        #self.player_position = (self.map_size[0] // 2, self.map_size[1] // 2)
+        
         self.player_position = (0,0)
 
         pygame.init()
@@ -65,7 +67,12 @@ class KeyboardPlayerPyGame(Player):
         }
 
     def act(self):
-        
+        if 0 < self.turn_count < 37:
+            self.turn_count += 1
+            return self.last_act
+        else:
+            self.turn_count = 0
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -84,6 +91,13 @@ class KeyboardPlayerPyGame(Player):
                     else:
                         self.key_hold_state[event.key] = True
                         self.last_act |= self.keymap[event.key]
+                        if self.keymap[event.key] == Action.LEFT:  
+                            self.turn_count = 1
+                            self.direction += 90
+                        elif self.keymap[event.key] == Action.RIGHT:
+                            self.turn_count = 1
+                            self.direction += -90
+
                     
                 else:
                     
@@ -98,93 +112,7 @@ class KeyboardPlayerPyGame(Player):
         
         self.update_map_on_keypress()
         return self.last_act
-
-    # def show_target_images(self):
-    #     self.player_position = (0,0)
-    #     self.direction = 0
-    #     targets = self.get_target_images()
-    #     best_indexes = [[]]
-    #     for target in targets:
-    #         best_index = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
-
-    #         best_indexes.append(best_index)
-
-    #     if targets is None or len(targets) <= 0:
-    #         return
-        
-    #     hor1 = cv2.hconcat([self.images[best_indexes[1][0]],self.images[best_indexes[2][0]]])
-    #     hor2 = cv2.hconcat([self.images[best_indexes[3][0]],self.images[best_indexes[4][0]]])
-    #     concat_img = cv2.vconcat([hor1, hor2])
-
-    #     hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]],self.images[best_indexes[2][1]]])
-    #     hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]],self.images[best_indexes[4][1]]])
-    #     concat_img_second_best = cv2.vconcat([hor1_second_best, hor2_second_best])
-
-    #     hor1_target = cv2.hconcat(targets[:2])
-    #     hor2_target = cv2.hconcat(targets[2:])
-    #     concat_img_target = cv2.vconcat([hor1_target, hor2_target])
-
-    #     hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]],self.images[best_indexes[2][2]]])
-    #     hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]],self.images[best_indexes[4][2]]])
-    #     concat_img_third_best = cv2.vconcat([hor1_third_best, hor2_third_best])
-
-    #     hor1_target = cv2.hconcat(targets[:2])
-    #     hor2_target = cv2.hconcat(targets[2:])
-    #     concat_img_target = cv2.vconcat([hor1_target, hor2_target])
-
-    #     w, h = concat_img_target.shape[:2]
-
-    #     w_offset = 25
-    #     h_offset = 10
-    #     font = cv2.FONT_HERSHEY_SIMPLEX
-    #     line = cv2.LINE_AA
-    #     size = 0.75
-    #     stroke = 1
-    #     color = (0, 0, 0)
-
-    #     scale_factor = 2  # Change this factor to whatever suits your needs
-
-    #     # Resize images to double their size for better visibility
-    #     concat_img = cv2.resize(concat_img, (0, 0), fx=scale_factor, fy=scale_factor)
-    #     concat_img_second_best = cv2.resize(concat_img_second_best, (0, 0), fx=scale_factor, fy=scale_factor)
-    #     concat_img_third_best = cv2.resize(concat_img_third_best, (0, 0), fx=scale_factor, fy=scale_factor)
-    #     concat_img_target = cv2.resize(concat_img_target, (0, 0), fx=scale_factor, fy=scale_factor)
-        
-        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[1][0]][0]:.2f} Y: {self.poses[best_indexes[1][0]][1]:.2f} W: {self.poses[best_indexes[1][0]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[2][0]][0]:.2f} Y: {self.poses[best_indexes[2][0]][1]:.2f} W: {self.poses[best_indexes[2][0]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[3][0]][0]:.2f} Y: {self.poses[best_indexes[3][0]][1]:.2f} W: {self.poses[best_indexes[3][0]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img, f'X: {self.poses[best_indexes[4][0]][0]:.2f} Y: {self.poses[best_indexes[4][0]][1]:.2f} W: {self.poses[best_indexes[4][0]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-
-        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[1][1]][0]:.2f} Y: {self.poses[best_indexes[1][1]][1]:.2f} W: {self.poses[best_indexes[1][1]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[2][1]][0]:.2f} Y: {self.poses[best_indexes[2][1]][1]:.2f} W: {self.poses[best_indexes[2][1]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[3][1]][0]:.2f} Y: {self.poses[best_indexes[3][1]][1]:.2f} W: {self.poses[best_indexes[3][1]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img_second_best, f'X: {self.poses[best_indexes[4][1]][0]:.2f} Y: {self.poses[best_indexes[4][1]][1]:.2f} W: {self.poses[best_indexes[4][1]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-
-        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[1][2]][0]:.2f} Y: {self.poses[best_indexes[1][2]][1]:.2f} W: {self.poses[best_indexes[1][2]][2]:.2f}', (h_offset, w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[2][2]][0]:.2f} Y: {self.poses[best_indexes[2][2]][1]:.2f} W: {self.poses[best_indexes[2][2]][2]:.2f}', (int(h/2) + h_offset, w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[3][2]][0]:.2f} Y: {self.poses[best_indexes[3][2]][1]:.2f} W: {self.poses[best_indexes[3][2]][2]:.2f}', (h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        # cv2.putText(concat_img_third_best, f'X: {self.poses[best_indexes[4][2]][0]:.2f} Y: {self.poses[best_indexes[4][2]][1]:.2f} W: {self.poses[best_indexes[4][2]][2]:.2f}', (int(h/2) + h_offset, int(w/2) + w_offset), font, .5, color, stroke, line)
-        
-        
-    #     concat_img_target = cv2.line(concat_img_target, (int(h/2), 0), (int(h/2), w), color, 2)
-    #     concat_img_target = cv2.line(concat_img_target, (0, int(w/2)), (h, int(w/2)), color, 2)
-
-
-    #     cv2.putText(concat_img_target, 'Front View', (h_offset, w_offset), font, size, color, stroke, line)
-    #     cv2.putText(concat_img_target, 'Right View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
-    #     cv2.putText(concat_img_target, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
-    #     cv2.putText(concat_img_target, 'Left View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
-        
-    #     # Concatenate the images again after resizing
-    #     top_row = cv2.hconcat([concat_img, concat_img_second_best])
-    #     bottom_row = cv2.hconcat([concat_img_third_best, concat_img_target])
-
-    #     cv2.namedWindow('KeyboardPlayer:targets and recognized', cv2.WINDOW_NORMAL)  # Create a resizable window
-    #     cv2.resizeWindow('KeyboardPlayer:targets and recognized', top_row.shape[1], top_row.shape[0] + bottom_row.shape[0])  # Set the window size
-
-    #     # Display the image
-    #     cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
-    #     cv2.waitKey(1)
+    
 
     def show_target_images(self):
         self.player_position = (0,0)
@@ -194,7 +122,12 @@ class KeyboardPlayerPyGame(Player):
             targets[0] = self.validation_img
 
         best_indexes = [[]]
+        
         for target in targets:
+
+            if self.visual_dictionary is None:
+                raise AttributeError("Dictionary was None")
+            
             best_index = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
             best_indexes.append(best_index)
 
@@ -311,7 +244,6 @@ class KeyboardPlayerPyGame(Player):
 
         self.show_target_images()
 
-
     def pre_navigation(self):
         print("pre_nav")
         targets = self.get_target_images()
@@ -377,10 +309,10 @@ class KeyboardPlayerPyGame(Player):
         #     fps = 35
         # spf = 1/fps
 
-        if self.key_hold_state[pygame.K_LEFT]:
-            self.direction += ROTATE_VALUE  # Rotate 1 degree left 
-        if self.key_hold_state[pygame.K_RIGHT]:
-            self.direction -= ROTATE_VALUE  # Rotate 1 degree right
+        # if self.key_hold_state[pygame.K_LEFT]:
+        #     self.direction += ROTATE_VALUE  # Rotate 1 degree left 
+        # if self.key_hold_state[pygame.K_RIGHT]:
+        #     self.direction -= ROTATE_VALUE  # Rotate 1 degree right
 
         # Ensure the direction is within 0-359 degrees
         self.direction %= 360
