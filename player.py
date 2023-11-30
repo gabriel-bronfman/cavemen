@@ -338,48 +338,62 @@ class KeyboardPlayerPyGame(Player):
         if self.poses is None or len(self.poses) == 0:
             return
         # Threshold distance for combining nearby nodes
-        threshold_distance = 1.0  # Adjust this value as needed
-
-        # Combine nearby nodes
-        combined_poses = []
-        for x, y, rotation in self.poses:
-            # Check if this pose is close to any already combined pose
-            close_to_existing = False
-            for i, (cx, cy, crot) in enumerate(combined_poses):
-                if math.sqrt((cx - x)**2 + (cy - y)**2) < threshold_distance:
-                    new_cx = (cx + x) / 2
-                    new_cy = (cy + y) / 2
-                    new_crot = (crot + rotation) / 2
-                    combined_poses[i] = (new_cx, new_cy, new_crot)
-                    close_to_existing = True
-                    break
-            if not close_to_existing:
-                combined_poses.append((x, y, rotation))
+        threshold_distance = 10  # Adjust this value as needed
 
         # Create a directed graph
         G = nx.DiGraph()
 
-        # Add nodes with combined poses
-        for i, (x, y, rotation) in enumerate(combined_poses):
-            G.add_node(i, pos=(x, y), rotation=rotation)
+        # Instantiate lists
+        combined_poses = [(self.poses[0][0],self.poses[0][1],self.poses[0][2])]
+        G.add_node(0, pos=(self.poses[0][0],self.poses[0][1]), rot=self.poses[0][2])
+        duplicate_index = -1
+        close_to_existing = False
 
-        # Add bidirectional edges (assuming sequential connection for this example)
-        for i in range(len(combined_poses) - 1):
-            G.add_edge(i, i + 1)
-            G.add_edge(i + 1, i)
+        for index in range(len(self.poses[1:])):
+            if close_to_existing:
+                prev_x, prev_y, prev_rot = self.poses[duplicate_index]
+            curr_x, curr_y, curr_rot = self.poses[index]
+
+            
+            
+            for i, (cx, cy, crot) in enumerate(combined_poses):
+                if math.sqrt((cx - curr_x)**2 + (cy - curr_y)**2) < threshold_distance:
+                    close_to_existing = True
+                    duplicate_index = i
+                    break
+            
+            if not close_to_existing:
+                combined_poses.append((curr_x, curr_y, curr_rot))
+                G.add_node(index,pos=(curr_x,curr_y), rot=curr_rot)
+                G.add_edge(index-1,index)
+                G.add_edge(index,index-1)
+
+            elif duplicate_index > -1 and not G.has_edge(duplicate_index,index-1):
+                G.add_edge(index-1,duplicate_index)
+                G.add_edge(duplicate_index,index-1)
+
+        print(G)
+        # # Add nodes with combined poses
+        # for i, (x, y, rotation) in enumerate(combined_poses):
+        #     G.add_node(i, pos=(x, y), rotation=rotation)
+
+        # # Add bidirectional edges (assuming sequential connection for this example)
+        # for i in range(len(combined_poses) - 1):
+        #     G.add_edge(i, i + 1)
+        #     G.add_edge(i + 1, i)
 
         # Limit each node to at most 4 neighbors
-        for node in list(G.nodes):
-            neighbors = list(G.neighbors(node))
-            if len(neighbors) > 4:
-                for neighbor in neighbors[4:]:
-                    G.remove_edge(node, neighbor)
-                    G.remove_edge(neighbor, node)
+        # for node in list(G.nodes):
+        #     neighbors = list(G.neighbors(node))
+        #     if len(neighbors) > 4:
+        #         for neighbor in neighbors[4:]:
+        #             G.remove_edge(node, neighbor)
+        #             G.remove_edge(neighbor, node)
 
         # Draw the graph
         pos = nx.get_node_attributes(G, 'pos')
         rotations = nx.get_node_attributes(G, 'rotation')
-        nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
+        nx.draw(G, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
 
         # Add rotation indication to each node
         for n, (x, y) in pos.items():
