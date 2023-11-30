@@ -121,7 +121,7 @@ class KeyboardPlayerPyGame(Player):
         if self.self_validate and len(targets) > 0:
             targets[0] = self.validation_img
 
-        best_indexes = [[]]
+        best_indexes = []
         
         for target in targets:
 
@@ -135,13 +135,13 @@ class KeyboardPlayerPyGame(Player):
             return
 
         # Concatenate best match images in pairs horizontally and then vertically
-        hor1 = cv2.hconcat([self.images[best_indexes[1][0]], self.images[best_indexes[2][0]]])
-        hor2 = cv2.hconcat([self.images[best_indexes[3][0]], self.images[best_indexes[4][0]]])
+        hor1 = cv2.hconcat([self.images[best_indexes[0][0]], self.images[best_indexes[1][0]]])
+        hor2 = cv2.hconcat([self.images[best_indexes[2][0]], self.images[best_indexes[3][0]]])
         concat_img = cv2.vconcat([hor1, hor2])
 
         # Concatenate second best match images similarly as above
-        hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]], self.images[best_indexes[2][1]]])
-        hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]], self.images[best_indexes[4][1]]])
+        hor1_second_best = cv2.hconcat([self.images[best_indexes[0][1]], self.images[best_indexes[1][1]]])
+        hor2_second_best = cv2.hconcat([self.images[best_indexes[2][1]], self.images[best_indexes[3][1]]])
         concat_img_second_best = cv2.vconcat([hor1_second_best, hor2_second_best])
 
         # Concatenate target images similarly as above
@@ -150,8 +150,8 @@ class KeyboardPlayerPyGame(Player):
         concat_img_target = cv2.vconcat([hor1_target, hor2_target])
 
         # Concatenate third best match images similarly as above
-        hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]], self.images[best_indexes[2][2]]])
-        hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]], self.images[best_indexes[4][2]]])
+        hor1_third_best = cv2.hconcat([self.images[best_indexes[0][2]], self.images[best_indexes[1][2]]])
+        hor2_third_best = cv2.hconcat([self.images[best_indexes[2][2]], self.images[best_indexes[3][2]]])
         concat_img_third_best = cv2.vconcat([hor1_third_best, hor2_third_best])
 
         # Get width and height for text placement before scaling
@@ -217,7 +217,7 @@ class KeyboardPlayerPyGame(Player):
 
                 # Draw the text with the scaled positions and sizes
                 cv2.putText(image_to_draw, 
-                            f'X: {self.poses[best_indexes[index][rank]][0]:.2f} Y: {self.poses[best_indexes[index][rank]][1]:.2f} W: {self.poses[best_indexes[index][rank]][2]:.2f}\t', 
+                            f'Selection: {3*(index-1) + rank + 1}\t\t', 
                             (x_offset * scale_factor, y_offset * scale_factor),  # Scaled offset
                             font, 
                             scaled_font_size, 
@@ -235,16 +235,18 @@ class KeyboardPlayerPyGame(Player):
         # Display the image
         cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
         cv2.waitKey(1)
+        return best_indexes
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
-        # self.pre_navigation_bypass()
-        # self.find_targets()
-        # self.draw_map()
         graph = self.create_graph_from_poses()
-        draw_graph_with_rotations(graph)
 
-        self.show_target_images()
+        target = self.show_target_images()
+        
+        if target is not None:
+            target = np.ravel(target)
+            input_index = int(input(f"Enter the row index (between 0 and {len(target) - 1}): ")) - 1
+            draw_graph_with_target(graph,self.poses[target[input_index]])
 
     def pre_navigation(self):
         print("pre_nav")
@@ -393,7 +395,7 @@ class KeyboardPlayerPyGame(Player):
     #     plt.show()
 
 
-    def create_graph_from_poses(self, threshold=20):
+    def create_graph_from_poses(self, threshold=25):
         if self.poses is None or len(self.poses) == 0:
             return None
         """
@@ -461,10 +463,11 @@ class KeyboardPlayerPyGame(Player):
             prev_node_index = curr_node_index
             prev_node_pose = curr_node_pose
             #print(f"duplicate_index {duplicate_index} duplicate_node {duplicate_vnode} last_added_index {last_added_index} \n")
-        print(graph.nodes)
+        
         return graph
 
-def draw_graph_with_rotations(graph):
+
+def draw_graph_with_target(graph,target):
     if graph is None:
         return
     """
@@ -473,9 +476,9 @@ def draw_graph_with_rotations(graph):
     # Extract positions and rotations from nodes
     pos = {node: (node[0], node[1]) for node in graph.nodes()}
     rotations = {node: node[2] for node in graph.nodes()}
-
+    node_colors = ['red' if euclidean_distance(node,target) < 25 else 'blue' for node in graph.nodes()]
     # Draw the graph
-    nx.draw(graph, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
+    nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
 
     # # Add rotation indication to each node
     # for node, (x, y) in pos.items():
