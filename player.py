@@ -240,7 +240,9 @@ class KeyboardPlayerPyGame(Player):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
         # self.pre_navigation_bypass()
         # self.find_targets()
-        self.draw_map()
+        # self.draw_map()
+        graph = self.create_graph_from_poses()
+        draw_graph_with_rotations(graph)
 
         self.show_target_images()
 
@@ -334,77 +336,124 @@ class KeyboardPlayerPyGame(Player):
         sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
         sys.stdout.flush()
 
-    def draw_map(self):
+    # def draw_map(self):
+    #     if self.poses is None or len(self.poses) == 0:
+    #         return
+    #     # Threshold distance for combining nearby nodes
+    #     threshold_distance = 10  # Adjust this value as needed
+
+    #     # Create a directed graph
+    #     G = nx.DiGraph()
+
+    #     # Instantiate lists
+    #     combined_poses = [(self.poses[0][0],self.poses[0][1],self.poses[0][2])]
+    #     G.add_node(0, pos=(self.poses[0][0],self.poses[0][1]), rot=self.poses[0][2])
+        
+    #     visited_list = []
+
+    #     for index in range(len(self.poses[1:])):
+    #         close_to_existing = False
+    #         duplicate_index = -1
+    #         curr_x, curr_y, curr_rot = self.poses[index]
+    #         print(index)
+
+    #         for i, (cx, cy, crot) in enumerate(combined_poses):
+    #             if math.sqrt((cx - curr_x)**2 + (cy - curr_y)**2) < threshold_distance:
+    #                 close_to_existing = True
+    #                 duplicate_index = i
+    #                 break
+            
+    #         if not close_to_existing:
+    #             visited_list.append(index)
+    #             combined_poses.append((curr_x, curr_y, curr_rot))
+    #             G.add_node(index,pos=(curr_x,curr_y), rot=curr_rot)
+    #             G.add_edge(index-1,index)
+    #             G.add_edge(index,index-1)
+
+    #         elif duplicate_index > -1 and not G.has_edge(duplicate_index,index-1):
+    #             visited_list.append(duplicate_index)
+    #             G.add_edge(index-1,duplicate_index)
+    #             G.add_edge(duplicate_index,index-1)
+    #             duplicate_index = -1
+
+    #     print(G)
+
+    #     # Draw the graph
+    #     pos = nx.get_node_attributes(G, 'pos')
+    #     rotations = nx.get_node_attributes(G, 'rotation')
+    #     nx.draw(G, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
+
+    #     # Add rotation indication to each node
+    #     for n, (x, y) in pos.items():
+    #         rotation = rotations[n]
+    #         dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
+    #         dy = math.sin(math.radians(rotation)) * 0.1
+    #         plt.arrow(x, y, dx, dy, head_width=0.05, head_length=0.1, fc='black', ec='black')
+
+    #     plt.show()
+
+
+    def create_graph_from_poses(self, threshold=20):
         if self.poses is None or len(self.poses) == 0:
-            return
-        # Threshold distance for combining nearby nodes
-        threshold_distance = 10  # Adjust this value as needed
+            return None
+        """
+        Create a graph from a list of poses where each pose is [x, y, rotation].
+        Connect nodes if their Euclidean distance is less than a given threshold.
+        """
+        # Create an empty graph
+        graph = nx.Graph()
 
-        # Create a directed graph
-        G = nx.DiGraph()
+        # List to keep track of visited poses
+        visited_poses = []
 
-        # Instantiate lists
-        combined_poses = [(self.poses[0][0],self.poses[0][1],self.poses[0][2])]
-        G.add_node(0, pos=(self.poses[0][0],self.poses[0][1]), rot=self.poses[0][2])
-        duplicate_index = -1
-        close_to_existing = False
+        # Iterate over each pose
+        for node in self.poses:
+            # Check if the node is a duplicate
+            is_duplicate = False
+            duplicate_vnode = None
 
-        for index in range(len(self.poses[1:])):
-            if close_to_existing:
-                prev_x, prev_y, prev_rot = self.poses[duplicate_index]
-            curr_x, curr_y, curr_rot = self.poses[index]
-
-            
-            
-            for i, (cx, cy, crot) in enumerate(combined_poses):
-                if math.sqrt((cx - curr_x)**2 + (cy - curr_y)**2) < threshold_distance:
-                    close_to_existing = True
-                    duplicate_index = i
+            for vnode in visited_poses:
+                if euclidean_distance(node, vnode) < threshold:
+                    is_duplicate = True
+                    duplicate_vnode = vnode
                     break
-            
-            if not close_to_existing:
-                combined_poses.append((curr_x, curr_y, curr_rot))
-                G.add_node(index,pos=(curr_x,curr_y), rot=curr_rot)
-                G.add_edge(index-1,index)
-                G.add_edge(index,index-1)
 
-            elif duplicate_index > -1 and not G.has_edge(duplicate_index,index-1):
-                G.add_edge(index-1,duplicate_index)
-                G.add_edge(duplicate_index,index-1)
+            # If the node is not a duplicate, add it to the graph and visited poses
+            if not is_duplicate:
+                graph.add_node(tuple(node))  # Adding the node as a tuple to make it hashable
+                visited_poses.append(node)
 
-        print(G)
-        # # Add nodes with combined poses
-        # for i, (x, y, rotation) in enumerate(combined_poses):
-        #     G.add_node(i, pos=(x, y), rotation=rotation)
+            # If the node is a duplicate and not already in the graph, connect it
+            elif duplicate_vnode and tuple(duplicate_vnode) not in graph:
+                graph.add_edge(tuple(node), tuple(duplicate_vnode))
 
-        # # Add bidirectional edges (assuming sequential connection for this example)
-        # for i in range(len(combined_poses) - 1):
-        #     G.add_edge(i, i + 1)
-        #     G.add_edge(i + 1, i)
+        return graph
 
-        # Limit each node to at most 4 neighbors
-        # for node in list(G.nodes):
-        #     neighbors = list(G.neighbors(node))
-        #     if len(neighbors) > 4:
-        #         for neighbor in neighbors[4:]:
-        #             G.remove_edge(node, neighbor)
-        #             G.remove_edge(neighbor, node)
+def draw_graph_with_rotations(graph):
+    if graph is None:
+        return
+    """
+    Draw the graph with an indication of rotation at each node.
+    """
+    # Extract positions and rotations from nodes
+    pos = {node: (node[0], node[1]) for node in graph.nodes()}
+    rotations = {node: node[2] for node in graph.nodes()}
 
-        # Draw the graph
-        pos = nx.get_node_attributes(G, 'pos')
-        rotations = nx.get_node_attributes(G, 'rotation')
-        nx.draw(G, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
+    # Draw the graph
+    nx.draw(graph, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
 
-        # Add rotation indication to each node
-        for n, (x, y) in pos.items():
-            rotation = rotations[n]
-            dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
-            dy = math.sin(math.radians(rotation)) * 0.1
-            plt.arrow(x, y, dx, dy, head_width=0.05, head_length=0.1, fc='black', ec='black')
+    # Add rotation indication to each node
+    for node, (x, y) in pos.items():
+        rotation = rotations[node]
+        dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
+        dy = math.sin(math.radians(rotation)) * 0.1
+        plt.arrow(x, y, dx, dy, head_width=0.005, head_length=0.01, fc='black', ec='black')
 
-        plt.show()
+    plt.show()
 
-
+def euclidean_distance(p1, p2):
+    """Calculate the Euclidean distance between two points."""
+    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
 
 if __name__ == "__main__":
