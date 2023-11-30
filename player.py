@@ -393,7 +393,7 @@ class KeyboardPlayerPyGame(Player):
     #     plt.show()
 
 
-    def create_graph_from_poses(self, threshold=10):
+    def create_graph_from_poses(self, threshold=20):
         if self.poses is None or len(self.poses) == 0:
             return None
         """
@@ -404,33 +404,64 @@ class KeyboardPlayerPyGame(Player):
         graph = nx.Graph()
 
         # List to keep track of visited poses
-        visited_poses = []
+        
+        
+        """ Iterate over each pose
+                curr_node = new pose
+                prev_node = curr_node
 
-        # Iterate over each pose
-        for i, node in enumerate(self.poses):
+            Check if curr_node is unique
+                if isnt: curr_node = existing_node
+                if is: add to list, add to graph
+            
+            Check if prev_node is a neigh of curr_node
+                if isnt: add bi-edge to each other
+                if is: pass
+            
+            curr_node = new pose
+            prev_node = curr_node
+        """
+        visited_poses = [self.poses[0]]
+        prev_node_index,prev_node_pose = 0, self.poses[0]
+        curr_node_index = -1
+        graph.add_node(prev_node_pose)
+        for curr_node_pose in self.poses[1:]:
+            print(f"i: {curr_node_index} curr_node: {curr_node_pose} ")
+            
             # Check if the node is a duplicate
             is_duplicate = False
-            duplicate_vnode = None
-
-            for vnode in visited_poses:
-                if euclidean_distance(node, vnode) < threshold:
+            
+            for vi,vnode in enumerate(visited_poses):
+                if euclidean_distance(curr_node_pose, vnode) < threshold:
                     is_duplicate = True
-                    duplicate_vnode = vnode
+                    curr_node_pose = vnode
+                    curr_node_index = vi
                     break
+            
 
-            # If the node is not a duplicate, add it to the graph and visited poses
+            #  If the node is not a duplicate, add it to the graph and visited poses
             if not is_duplicate:
-                graph.add_node(node)
-                if i > 0:
-                    graph.add_edge(self.poses[i-1], node)
-                    graph.add_edge(node, self.poses[i-1])
+                curr_node_index = len(visited_poses)
+                graph.add_node(curr_node_pose)
+                if curr_node_index > 0:
+                    graph.add_edge(prev_node_pose, curr_node_pose)
+                    graph.add_edge(curr_node_pose, prev_node_pose)
                 # graph.add_node(tuple(node))  # Adding the node as a tuple to make it hashable
-                visited_poses.append(node)
+                visited_poses.append(curr_node_pose)
 
+                print(f"No duplicate on this step, connected node {curr_node_index}: {curr_node_pose} with node {prev_node_index}: {prev_node_pose} \n")
+    
             # If the node is a duplicate and not already in the graph, connect it
-            elif i > 0 and duplicate_vnode and duplicate_vnode != node and not graph.has_edge(duplicate_vnode,node):
-                graph.add_edge(node, duplicate_vnode)
-                graph.add_edge(duplicate_vnode, node)
+            elif curr_node_index > 0 and curr_node_index != prev_node_index and not graph.has_edge(curr_node_pose,prev_node_pose):
+                print(f"Duplicate on this step, connecting {curr_node_index} and {prev_node_index} \n")
+                graph.add_edge(curr_node_pose, prev_node_pose)
+                graph.add_edge(prev_node_pose, curr_node_pose)
+            else:
+                print(f"Duplicate this step, no connection\n")
+            prev_node_index = curr_node_index
+            prev_node_pose = curr_node_pose
+            #print(f"duplicate_index {duplicate_index} duplicate_node {duplicate_vnode} last_added_index {last_added_index} \n")
+        print(graph.nodes)
         return graph
 
 def draw_graph_with_rotations(graph):
@@ -446,12 +477,12 @@ def draw_graph_with_rotations(graph):
     # Draw the graph
     nx.draw(graph, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
 
-    # Add rotation indication to each node
-    for node, (x, y) in pos.items():
-        rotation = rotations[node]
-        dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
-        dy = math.sin(math.radians(rotation)) * 0.1
-        plt.arrow(x, y, dx, dy, head_width=0.01, head_length=0.1, fc='black', ec='black')
+    # # Add rotation indication to each node
+    # for node, (x, y) in pos.items():
+    #     rotation = rotations[node]
+    #     dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
+    #     dy = math.sin(math.radians(rotation)) * 0.1
+    #     plt.arrow(x, y, dx, dy, head_width=0.01, head_length=0.1, fc='black', ec='black')
 
     plt.show()
 
