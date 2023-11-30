@@ -296,7 +296,7 @@ class KeyboardPlayerPyGame(Player):
 
         pygame.display.set_caption("KeyboardPlayer:fpv")
         self.images.append(fpv)
-        self.poses.append([self.player_position[0],self.player_position[1],self.direction])
+        self.poses.append(tuple([self.player_position[0],self.player_position[1],self.direction]))
         rgb = convert_opencv_img_to_pygame(fpv)
         self.screen.blit(rgb, (0, 0))
         pygame.display.update()
@@ -393,7 +393,7 @@ class KeyboardPlayerPyGame(Player):
     #     plt.show()
 
 
-    def create_graph_from_poses(self, threshold=20):
+    def create_graph_from_poses(self, threshold=10):
         if self.poses is None or len(self.poses) == 0:
             return None
         """
@@ -407,7 +407,7 @@ class KeyboardPlayerPyGame(Player):
         visited_poses = []
 
         # Iterate over each pose
-        for node in self.poses:
+        for i, node in enumerate(self.poses):
             # Check if the node is a duplicate
             is_duplicate = False
             duplicate_vnode = None
@@ -420,13 +420,17 @@ class KeyboardPlayerPyGame(Player):
 
             # If the node is not a duplicate, add it to the graph and visited poses
             if not is_duplicate:
-                graph.add_node(tuple(node))  # Adding the node as a tuple to make it hashable
+                graph.add_node(tuple(node))
+                if i > 0:
+                    graph.add_edge(self.poses[i-1], node)
+                    graph.add_edge(node, self.poses[i-1])
+                # graph.add_node(tuple(node))  # Adding the node as a tuple to make it hashable
                 visited_poses.append(node)
 
             # If the node is a duplicate and not already in the graph, connect it
-            elif duplicate_vnode and tuple(duplicate_vnode) not in graph:
-                graph.add_edge(tuple(node), tuple(duplicate_vnode))
-
+            elif i > 0 and duplicate_vnode and duplicate_vnode != node and not graph.has_edge(duplicate_vnode,node):
+                graph.add_edge(node, duplicate_vnode)
+                graph.add_edge(duplicate_vnode, node)
         return graph
 
 def draw_graph_with_rotations(graph):
@@ -447,7 +451,7 @@ def draw_graph_with_rotations(graph):
         rotation = rotations[node]
         dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
         dy = math.sin(math.radians(rotation)) * 0.1
-        plt.arrow(x, y, dx, dy, head_width=0.005, head_length=0.01, fc='black', ec='black')
+        plt.arrow(x, y, dx, dy, head_width=0.01, head_length=0.1, fc='black', ec='black')
 
     plt.show()
 
