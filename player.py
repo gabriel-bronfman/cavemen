@@ -420,7 +420,7 @@ class KeyboardPlayerPyGame(Player):
 
             # If the node is not a duplicate, add it to the graph and visited poses
             if not is_duplicate:
-                graph.add_node(tuple(node))
+                graph.add_node(node)
                 if i > 0:
                     graph.add_edge(self.poses[i-1], node)
                     graph.add_edge(node, self.poses[i-1])
