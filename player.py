@@ -8,6 +8,7 @@ from place_recognition import extract_sift_features, create_visual_dictionary, g
 import networkx as nx
 import math
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 ROTATE_VALUE = 2.415
 MOVE_VALUE = 5
@@ -28,6 +29,9 @@ class KeyboardPlayerPyGame(Player):
 
         self.poses = []
         self.self_validate = False
+        self.target_index = -1
+        self.graph = None
+        self.target = None
 
         # Initialize the map data
         self.map_size = (1000, 1000, 3)  # Example size for a larger map
@@ -239,14 +243,13 @@ class KeyboardPlayerPyGame(Player):
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
-        graph = self.create_graph_from_poses()
-
-        target = self.show_target_images()
+        self.target = self.show_target_images()
         
-        if target is not None:
-            target = np.ravel(target)
-            input_index = int(input(f"Enter the row index (between 0 and {len(target) - 1}): ")) - 1
-            draw_graph_with_target(graph,self.poses[target[input_index]])
+        if self.target is not None:
+            self.graph = self.create_graph_from_poses()
+            self.target = np.ravel(self.target)
+            self.target_index = int(input(f"Enter the row index (between 0 and {len(self.target) - 1}): ")) - 1
+            
 
     def pre_navigation(self):
         print("pre_nav")
@@ -301,98 +304,25 @@ class KeyboardPlayerPyGame(Player):
         self.poses.append(tuple([self.player_position[0],self.player_position[1],self.direction]))
         rgb = convert_opencv_img_to_pygame(fpv)
         self.screen.blit(rgb, (0, 0))
+        if self.target_index > -1:
+            curr_map = self.draw_graph_with_target(self.graph,self.poses[self.target[self.target_index]])
+            cv2.imshow("2D map", curr_map)
+            # cv2.waitKey(1)
         pygame.display.update()
 
     def update_map_on_keypress(self):
-        # Rotate left or right based on the current key hold state
-        # self.direction = (ROTATE_VALUE*(self.key_hold_time[pygame.K_RIGHT]['end'] - self.key_hold_time[pygame.K_RIGHT]['start']) \
-        #     - ROTATE_VALUE*(self.key_hold_time[pygame.K_LEFT]['end'] - self.key_hold_time[pygame.K_LEFT]['start']))
-        # if self.get_state():
-        #     fps = self.get_state()[4]
-        # else:
-        #     fps = 35
-        # spf = 1/fps
 
-        # if self.key_hold_state[pygame.K_LEFT]:
-        #     self.direction += ROTATE_VALUE  # Rotate 1 degree left 
-        # if self.key_hold_state[pygame.K_RIGHT]:
-        #     self.direction -= ROTATE_VALUE  # Rotate 1 degree right
-
-        # Ensure the direction is within 0-359 degrees
         self.direction %= 360
-
-        # Move forward or backward based on the current direction
         move_x, move_y = 0, 0
+
         if self.key_hold_state[pygame.K_UP] or self.key_hold_state[pygame.K_DOWN]:
             move_amount = MOVE_VALUE if self.key_hold_state[pygame.K_UP] else -MOVE_VALUE
             move_x = move_amount * np.cos(np.deg2rad(self.direction))
             move_y = move_amount * np.sin(np.deg2rad(self.direction))
-        # print(f'move_x: {move_x} move_y: {move_y}')
         self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
-        # # Update the player's position on the map
-        # self.player_position = (
-        #     max(0, min(self.player_position[0] + move_x, self.map_size[0] - 1)),
-        #     max(0, min(self.player_position[1] + move_y, self.map_size[1] - 1))
-        # )
 
         sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
         sys.stdout.flush()
-
-    # def draw_map(self):
-    #     if self.poses is None or len(self.poses) == 0:
-    #         return
-    #     # Threshold distance for combining nearby nodes
-    #     threshold_distance = 10  # Adjust this value as needed
-
-    #     # Create a directed graph
-    #     G = nx.DiGraph()
-
-    #     # Instantiate lists
-    #     combined_poses = [(self.poses[0][0],self.poses[0][1],self.poses[0][2])]
-    #     G.add_node(0, pos=(self.poses[0][0],self.poses[0][1]), rot=self.poses[0][2])
-        
-    #     visited_list = []
-
-    #     for index in range(len(self.poses[1:])):
-    #         close_to_existing = False
-    #         duplicate_index = -1
-    #         curr_x, curr_y, curr_rot = self.poses[index]
-    #         print(index)
-
-    #         for i, (cx, cy, crot) in enumerate(combined_poses):
-    #             if math.sqrt((cx - curr_x)**2 + (cy - curr_y)**2) < threshold_distance:
-    #                 close_to_existing = True
-    #                 duplicate_index = i
-    #                 break
-            
-    #         if not close_to_existing:
-    #             visited_list.append(index)
-    #             combined_poses.append((curr_x, curr_y, curr_rot))
-    #             G.add_node(index,pos=(curr_x,curr_y), rot=curr_rot)
-    #             G.add_edge(index-1,index)
-    #             G.add_edge(index,index-1)
-
-    #         elif duplicate_index > -1 and not G.has_edge(duplicate_index,index-1):
-    #             visited_list.append(duplicate_index)
-    #             G.add_edge(index-1,duplicate_index)
-    #             G.add_edge(duplicate_index,index-1)
-    #             duplicate_index = -1
-
-    #     print(G)
-
-    #     # Draw the graph
-    #     pos = nx.get_node_attributes(G, 'pos')
-    #     rotations = nx.get_node_attributes(G, 'rotation')
-    #     nx.draw(G, pos, node_color='skyblue', node_size=700, arrowstyle='<|-|>', arrowsize=15)
-
-    #     # Add rotation indication to each node
-    #     for n, (x, y) in pos.items():
-    #         rotation = rotations[n]
-    #         dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
-    #         dy = math.sin(math.radians(rotation)) * 0.1
-    #         plt.arrow(x, y, dx, dy, head_width=0.05, head_length=0.1, fc='black', ec='black')
-
-    #     plt.show()
 
 
     def create_graph_from_poses(self, threshold=25):
@@ -467,27 +397,49 @@ class KeyboardPlayerPyGame(Player):
         return graph
 
 
-def draw_graph_with_target(graph,target):
-    if graph is None:
-        return
-    """
-    Draw the graph with an indication of rotation at each node.
-    """
-    # Extract positions and rotations from nodes
-    pos = {node: (node[0], node[1]) for node in graph.nodes()}
-    rotations = {node: node[2] for node in graph.nodes()}
-    node_colors = ['red' if euclidean_distance(node,target) < 25 else 'blue' for node in graph.nodes()]
-    # Draw the graph
-    nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
+    def draw_graph_with_target(self,graph,target):
+        if graph is None:
+            return
+        """
+        Draw the graph with an indication of rotation at each node.
+        """
+        # Extract positions and rotations from nodes
+        pos = {node: (node[0], node[1]) for node in graph.nodes()}
+        rotations = {node: node[2] for node in graph.nodes()}
+        node_colors = []
+        for node in graph.nodes:
+            if euclidean_distance(node,target) < 25:
+                node_colors.append('red')
+            elif euclidean_distance(self.player_position,node) < 25:
+                node_colors.append('yellow')
+            else:
+                node_colors.append('blue')
+        #node_colors = ['red' if euclidean_distance(node,target) < 25  else 'blue' for node in graph.nodes()]
+        # Draw the graph
+        nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
 
-    # # Add rotation indication to each node
-    # for node, (x, y) in pos.items():
-    #     rotation = rotations[node]
-    #     dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
-    #     dy = math.sin(math.radians(rotation)) * 0.1
-    #     plt.arrow(x, y, dx, dy, head_width=0.01, head_length=0.1, fc='black', ec='black')
+        # # Add rotation indication to each node
+        # for node, (x, y) in pos.items():
+        #     rotation = rotations[node]
+        #     dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
+        #     dy = math.sin(math.radians(rotation)) * 0.1
+        #     plt.arrow(x, y, dx, dy, head_width=0.01, head_length=0.1, fc='black', ec='black')
 
-    plt.show()
+        #plt.show()
+
+        # Get the Matplotlib figure and axis
+        fig = plt.gcf()
+        ax = plt.gca()
+
+        # Convert the Matplotlib figure to a NumPy array
+        canvas = FigureCanvasAgg(fig)
+        canvas.draw()
+        img_width, img_height = fig.get_size_inches() * fig.get_dpi()
+        img_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(int(img_height), int(img_width), 4)
+
+        # Convert RGB to BGR (OpenCV uses BGR order)
+        img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGBA2BGR)
+        return img_bgr
 
 def euclidean_distance(p1, p2):
     """Calculate the Euclidean distance between two points."""
