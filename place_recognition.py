@@ -76,11 +76,11 @@ def process_image_and_find_best_match(new_image, list_of_histograms, kmeans):
     distances = [np.linalg.norm(histogram - hist) for hist in list_of_histograms]
     
     # Find the indices of the 5 best candidates
-    best_candidates_indices = np.argsort(distances)[:5]
+    best_candidates_indices = np.argsort(distances)[:3]
     
-    return best_candidates_indices
+    return np.array(best_candidates_indices)
     
-    return best_candidates_indices
+    
 
 def main():
     folder_path = 'data/textures'

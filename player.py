@@ -5,6 +5,13 @@ import numpy as np
 import sys
 import random
 from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, compare_histograms, process_image_and_find_best_match
+import networkx as nx
+import math
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+import redis
+import json
+import subprocess
 
 ROTATE_VALUE = 2.415
 MOVE_VALUE = 5
@@ -25,6 +32,9 @@ class KeyboardPlayerPyGame(Player):
 
         self.poses = []
         self.self_validate = False
+        self.target_index = -1
+        self.graph = None
+        self.target = None
 
         # Initialize the map data
         self.map_size = (1000, 1000, 3)  # Example size for a larger map
@@ -36,6 +46,9 @@ class KeyboardPlayerPyGame(Player):
         self.player_position = (0,0)
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
+        
+        self.redis = redis.Redis(host='localhost', port=6379, db=0) 
+        self.redis.flushall()
         super(KeyboardPlayerPyGame, self).__init__()
 
     def reset(self):
@@ -48,7 +61,6 @@ class KeyboardPlayerPyGame(Player):
         self.direction = 0
         
         self.player_position = (0,0)
-        
 
         pygame.init()
 
@@ -75,6 +87,9 @@ class KeyboardPlayerPyGame(Player):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 self.last_act = Action.QUIT
+                self.redis.flushall()
+                self.redis.flushdb()
+                self.redis.close()
                 return Action.QUIT
 
             if event.type == pygame.KEYDOWN:
@@ -119,7 +134,7 @@ class KeyboardPlayerPyGame(Player):
         if self.self_validate and len(targets) > 0:
             targets[0] = self.validation_img
 
-        best_indexes = [[]]
+        best_indexes = []
         
         for target in targets:
 
@@ -133,13 +148,13 @@ class KeyboardPlayerPyGame(Player):
             return
 
         # Concatenate best match images in pairs horizontally and then vertically
-        hor1 = cv2.hconcat([self.images[best_indexes[1][0]], self.images[best_indexes[2][0]]])
-        hor2 = cv2.hconcat([self.images[best_indexes[3][0]], self.images[best_indexes[4][0]]])
+        hor1 = cv2.hconcat([self.images[best_indexes[0][0]], self.images[best_indexes[1][0]]])
+        hor2 = cv2.hconcat([self.images[best_indexes[2][0]], self.images[best_indexes[3][0]]])
         concat_img = cv2.vconcat([hor1, hor2])
 
         # Concatenate second best match images similarly as above
-        hor1_second_best = cv2.hconcat([self.images[best_indexes[1][1]], self.images[best_indexes[2][1]]])
-        hor2_second_best = cv2.hconcat([self.images[best_indexes[3][1]], self.images[best_indexes[4][1]]])
+        hor1_second_best = cv2.hconcat([self.images[best_indexes[0][1]], self.images[best_indexes[1][1]]])
+        hor2_second_best = cv2.hconcat([self.images[best_indexes[2][1]], self.images[best_indexes[3][1]]])
         concat_img_second_best = cv2.vconcat([hor1_second_best, hor2_second_best])
 
         # Concatenate target images similarly as above
@@ -148,8 +163,8 @@ class KeyboardPlayerPyGame(Player):
         concat_img_target = cv2.vconcat([hor1_target, hor2_target])
 
         # Concatenate third best match images similarly as above
-        hor1_third_best = cv2.hconcat([self.images[best_indexes[1][2]], self.images[best_indexes[2][2]]])
-        hor2_third_best = cv2.hconcat([self.images[best_indexes[3][2]], self.images[best_indexes[4][2]]])
+        hor1_third_best = cv2.hconcat([self.images[best_indexes[0][2]], self.images[best_indexes[1][2]]])
+        hor2_third_best = cv2.hconcat([self.images[best_indexes[2][2]], self.images[best_indexes[3][2]]])
         concat_img_third_best = cv2.vconcat([hor1_third_best, hor2_third_best])
 
         # Get width and height for text placement before scaling
@@ -215,7 +230,7 @@ class KeyboardPlayerPyGame(Player):
 
                 # Draw the text with the scaled positions and sizes
                 cv2.putText(image_to_draw, 
-                            f'X: {self.poses[best_indexes[index][rank]][0]:.2f} Y: {self.poses[best_indexes[index][rank]][1]:.2f} W: {self.poses[best_indexes[index][rank]][2]:.2f}\t', 
+                            f'Selection: {3*(index-1) + rank + 1}\t\t', 
                             (x_offset * scale_factor, y_offset * scale_factor),  # Scaled offset
                             font, 
                             scaled_font_size, 
@@ -233,15 +248,18 @@ class KeyboardPlayerPyGame(Player):
         # Display the image
         cv2.imshow('KeyboardPlayer:targets and recognized', cv2.vconcat([top_row, bottom_row]))
         cv2.waitKey(1)
-
-
-
+        return best_indexes
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
-        # self.pre_navigation_bypass()
-        # self.find_targets()
-        self.show_target_images()
+        self.target = self.show_target_images()
+        
+        if self.target is not None:
+            self.graph = self.create_graph_from_poses()
+            self.target = np.ravel(self.target)
+            self.target_index = int(input(f"Enter the row index (between 0 and {len(self.target) - 1}): ")) - 1
+            cv2.destroyAllWindows()
+            
 
     def pre_navigation(self):
         print("pre_nav")
@@ -293,83 +311,134 @@ class KeyboardPlayerPyGame(Player):
 
         pygame.display.set_caption("KeyboardPlayer:fpv")
         self.images.append(fpv)
-        self.poses.append([self.player_position[0],self.player_position[1],self.direction])
+        self.poses.append(tuple([self.player_position[0],self.player_position[1],self.direction]))
         rgb = convert_opencv_img_to_pygame(fpv)
         self.screen.blit(rgb, (0, 0))
+        if self.target_index > -1:
+            # curr_map = self.draw_graph_with_target()
+            # cv2.imshow("2D map", curr_map)
+            # cv2.waitKey(1)
+            self.update_redis_data()
         pygame.display.update()
 
     def update_map_on_keypress(self):
-        # Rotate left or right based on the current key hold state
-        # self.direction = (ROTATE_VALUE*(self.key_hold_time[pygame.K_RIGHT]['end'] - self.key_hold_time[pygame.K_RIGHT]['start']) \
-        #     - ROTATE_VALUE*(self.key_hold_time[pygame.K_LEFT]['end'] - self.key_hold_time[pygame.K_LEFT]['start']))
-        # if self.get_state():
-        #     fps = self.get_state()[4]
-        # else:
-        #     fps = 35
-        # spf = 1/fps
 
-        # if self.key_hold_state[pygame.K_LEFT]:
-        #     self.direction += ROTATE_VALUE  # Rotate 1 degree left 
-        # if self.key_hold_state[pygame.K_RIGHT]:
-        #     self.direction -= ROTATE_VALUE  # Rotate 1 degree right
-
-        # Ensure the direction is within 0-359 degrees
         self.direction %= 360
-
-        # Move forward or backward based on the current direction
         move_x, move_y = 0, 0
+
         if self.key_hold_state[pygame.K_UP] or self.key_hold_state[pygame.K_DOWN]:
             move_amount = MOVE_VALUE if self.key_hold_state[pygame.K_UP] else -MOVE_VALUE
             move_x = move_amount * np.cos(np.deg2rad(self.direction))
             move_y = move_amount * np.sin(np.deg2rad(self.direction))
-        # print(f'move_x: {move_x} move_y: {move_y}')
         self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
-        # # Update the player's position on the map
-        # self.player_position = (
-        #     max(0, min(self.player_position[0] + move_x, self.map_size[0] - 1)),
-        #     max(0, min(self.player_position[1] + move_y, self.map_size[1] - 1))
-        # )
 
-        #self.draw_map()
         sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
         sys.stdout.flush()
 
-    def draw_map(self, color=[255, 255, 255]):
-        # Determine the size of the window we are using to display the map
-        window_size = self.map_size[:2]  # Size of the map window in pixels
-        if sum(self.map_data[self.player_position[1], self.player_position[0]]) == 0:
-            self.map_data[self.player_position[1], self.player_position[0]] = color
-        # Determine the bounds for the centering effect based on the scale and window size
-        center_bounds = (self.map_size[0] - window_size[0] // self.map_scale,
-                        self.map_size[1] - window_size[1] // self.map_scale)
 
-        # Get player's position on the map_data
-        player_x, player_y = self.player_position
+    def create_graph_from_poses(self, threshold=25):
+        if self.poses is None or len(self.poses) == 0:
+            return None
+        """
+        Create a graph from a list of poses where each pose is [x, y, rotation].
+        Connect nodes if their Euclidean distance is less than a given threshold.
+        """
+        # Create an empty graph
+        graph = nx.Graph()
 
-        # Calculate the top-left coordinate of the map view
-        top_left_x = max(0, min(player_x - window_size[0] // (2 * self.map_scale), center_bounds[0]))
-        top_left_y = max(0, min(player_y - window_size[1] // (2 * self.map_scale), center_bounds[1]))
+        # List to keep track of visited poses
+        
+        
+        """ Iterate over each pose
+                curr_node = new pose
+                prev_node = curr_node
 
-        # Create a view from the map data that corresponds to the current window view
-        view = self.map_data[top_left_y:top_left_y + window_size[1] // self.map_scale,
-                            top_left_x:top_left_x + window_size[0] // self.map_scale]
+            Check if curr_node is unique
+                if isnt: curr_node = existing_node
+                if is: add to list, add to graph
+            
+            Check if prev_node is a neigh of curr_node
+                if isnt: add bi-edge to each other
+                if is: pass
+            
+            curr_node = new pose
+            prev_node = curr_node
+        """
+        visited_poses = [self.poses[0]]
+        prev_node_index,prev_node_pose = 0, self.poses[0]
+        curr_node_index = -1
+        graph.add_node(prev_node_pose)
+        for curr_node_pose in self.poses[1:]:
+            print(f"i: {curr_node_index} curr_node: {curr_node_pose} ")
+            
+            # Check if the node is a duplicate
+            is_duplicate = False
+            
+            for vi,vnode in enumerate(visited_poses):
+                if euclidean_distance(curr_node_pose, vnode) < threshold:
+                    is_duplicate = True
+                    curr_node_pose = vnode
+                    curr_node_index = vi
+                    break
+            
 
-        # Create an image that enlarges the map using the scale factor
-        map_image_large = cv2.resize(view, window_size, interpolation=cv2.INTER_NEAREST)
+            #  If the node is not a duplicate, add it to the graph and visited poses
+            if not is_duplicate:
+                curr_node_index = len(visited_poses)
+                graph.add_node(curr_node_pose)
+                if curr_node_index > 0:
+                    graph.add_edge(prev_node_pose, curr_node_pose)
+                    graph.add_edge(curr_node_pose, prev_node_pose)
+                # graph.add_node(tuple(node))  # Adding the node as a tuple to make it hashable
+                visited_poses.append(curr_node_pose)
 
-        # Determine the position to draw the player in the view
-        # draw_x = min(max(player_x - top_left_x, 0), window_size[0] // self.map_scale) * self.map_scale
-        # draw_y = min(max(player_y - top_left_y, 0), window_size[1] // self.map_scale) * self.map_scale
+                print(f"No duplicate on this step, connected node {curr_node_index}: {curr_node_pose} with node {prev_node_index}: {prev_node_pose} \n")
+    
+            # If the node is a duplicate and not already in the graph, connect it
+            elif curr_node_index > 0 and curr_node_index != prev_node_index and not graph.has_edge(curr_node_pose,prev_node_pose):
+                print(f"Duplicate on this step, connecting {curr_node_index} and {prev_node_index} \n")
+                graph.add_edge(curr_node_pose, prev_node_pose)
+                graph.add_edge(prev_node_pose, curr_node_pose)
+            else:
+                print(f"Duplicate this step, no connection\n")
+            prev_node_index = curr_node_index
+            prev_node_pose = curr_node_pose
+            #print(f"duplicate_index {duplicate_index} duplicate_node {duplicate_vnode} last_added_index {last_added_index} \n")
+        
+        return graph
+    
+    def update_redis_data(self):
+        # Serialize data if necessary (e.g., JSON)
+        if self.graph is None:
+            return
+        self.redis.set('graph_data', serialize(nx.node_link_data(self.graph)))
+        self.redis.set('target', serialize(self.poses[self.target[self.target_index]]))
+        self.redis.set('player_position', serialize(self.player_position))
 
-        # Draw the player on the map view
-        # map_image_large[draw_y:draw_y+self.map_scale, draw_x:draw_x+self.map_scale] = color  # Mark the new position
+def serialize(data):
+    return json.dumps(data)
 
-        # Display the map image using OpenCV
-        cv2.imshow('2D Map', map_image_large)
-        cv2.waitKey(1)  # Refresh the OpenCV window
-
+def euclidean_distance(p1, p2):
+    """Calculate the Euclidean distance between two points."""
+    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
 
 if __name__ == "__main__":
     import vis_nav_game
+    import sys
+    import os
+
+    # Set an environment variable for macOS to ensure GUI runs in the main thread
+    os.environ['PYTHONUNBUFFERED'] = '1'
+
+    # Start plotter.py as a subprocess
+    # plotter_process = subprocess.Popen([sys.executable, "plotter.py"])
+
+    # try:
+        # Start the main game
     vis_nav_game.play(the_player=KeyboardPlayerPyGame())
+    # finally:
+        # Ensure that plotter.py is terminated when player.py finishes
+        # plotter_process.terminate()
+        # plotter_process.wait()
+
