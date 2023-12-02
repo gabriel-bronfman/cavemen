@@ -9,6 +9,9 @@ import networkx as nx
 import math
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+import redis
+import json
+import subprocess
 
 ROTATE_VALUE = 2.415
 MOVE_VALUE = 5
@@ -43,6 +46,9 @@ class KeyboardPlayerPyGame(Player):
         self.player_position = (0,0)
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
+        
+        self.redis = redis.Redis(host='localhost', port=6379, db=0) 
+        self.redis.flushall()
         super(KeyboardPlayerPyGame, self).__init__()
 
     def reset(self):
@@ -81,6 +87,9 @@ class KeyboardPlayerPyGame(Player):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 self.last_act = Action.QUIT
+                self.redis.flushall()
+                self.redis.flushdb()
+                self.redis.close()
                 return Action.QUIT
 
             if event.type == pygame.KEYDOWN:
@@ -249,6 +258,7 @@ class KeyboardPlayerPyGame(Player):
             self.graph = self.create_graph_from_poses()
             self.target = np.ravel(self.target)
             self.target_index = int(input(f"Enter the row index (between 0 and {len(self.target) - 1}): ")) - 1
+            cv2.destroyAllWindows()
             
 
     def pre_navigation(self):
@@ -305,9 +315,10 @@ class KeyboardPlayerPyGame(Player):
         rgb = convert_opencv_img_to_pygame(fpv)
         self.screen.blit(rgb, (0, 0))
         if self.target_index > -1:
-            curr_map = self.draw_graph_with_target(self.graph,self.poses[self.target[self.target_index]])
-            cv2.imshow("2D map", curr_map)
+            # curr_map = self.draw_graph_with_target()
+            # cv2.imshow("2D map", curr_map)
             # cv2.waitKey(1)
+            self.update_redis_data()
         pygame.display.update()
 
     def update_map_on_keypress(self):
@@ -395,51 +406,17 @@ class KeyboardPlayerPyGame(Player):
             #print(f"duplicate_index {duplicate_index} duplicate_node {duplicate_vnode} last_added_index {last_added_index} \n")
         
         return graph
-
-
-    def draw_graph_with_target(self,graph,target):
-        if graph is None:
+    
+    def update_redis_data(self):
+        # Serialize data if necessary (e.g., JSON)
+        if self.graph is None:
             return
-        """
-        Draw the graph with an indication of rotation at each node.
-        """
-        # Extract positions and rotations from nodes
-        pos = {node: (node[0], node[1]) for node in graph.nodes()}
-        rotations = {node: node[2] for node in graph.nodes()}
-        node_colors = []
-        for node in graph.nodes:
-            if euclidean_distance(node,target) < 25:
-                node_colors.append('red')
-            elif euclidean_distance(self.player_position,node) < 25:
-                node_colors.append('yellow')
-            else:
-                node_colors.append('blue')
-        #node_colors = ['red' if euclidean_distance(node,target) < 25  else 'blue' for node in graph.nodes()]
-        # Draw the graph
-        nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
+        self.redis.set('graph_data', serialize(nx.node_link_data(self.graph)))
+        self.redis.set('target', serialize(self.poses[self.target[self.target_index]]))
+        self.redis.set('player_position', serialize(self.player_position))
 
-        # # Add rotation indication to each node
-        # for node, (x, y) in pos.items():
-        #     rotation = rotations[node]
-        #     dx = math.cos(math.radians(rotation)) * 0.1  # Length of the rotation indicator
-        #     dy = math.sin(math.radians(rotation)) * 0.1
-        #     plt.arrow(x, y, dx, dy, head_width=0.01, head_length=0.1, fc='black', ec='black')
-
-        #plt.show()
-
-        # Get the Matplotlib figure and axis
-        fig = plt.gcf()
-        ax = plt.gca()
-
-        # Convert the Matplotlib figure to a NumPy array
-        canvas = FigureCanvasAgg(fig)
-        canvas.draw()
-        img_width, img_height = fig.get_size_inches() * fig.get_dpi()
-        img_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(int(img_height), int(img_width), 4)
-
-        # Convert RGB to BGR (OpenCV uses BGR order)
-        img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGBA2BGR)
-        return img_bgr
+def serialize(data):
+    return json.dumps(data)
 
 def euclidean_distance(p1, p2):
     """Calculate the Euclidean distance between two points."""
@@ -448,4 +425,20 @@ def euclidean_distance(p1, p2):
 
 if __name__ == "__main__":
     import vis_nav_game
+    import sys
+    import os
+
+    # Set an environment variable for macOS to ensure GUI runs in the main thread
+    os.environ['PYTHONUNBUFFERED'] = '1'
+
+    # Start plotter.py as a subprocess
+    # plotter_process = subprocess.Popen([sys.executable, "plotter.py"])
+
+    # try:
+        # Start the main game
     vis_nav_game.play(the_player=KeyboardPlayerPyGame())
+    # finally:
+        # Ensure that plotter.py is terminated when player.py finishes
+        # plotter_process.terminate()
+        # plotter_process.wait()
+
