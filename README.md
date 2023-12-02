@@ -1,6 +1,6 @@
 <p align="center">
 
-  <h1 align="center">🗿 Cavemens: A simple approach for the Robot Perception project</h1>
+  <h1 align="center">🗿 Cavemens: A pre-historic approach for the mapping and localization problem</h1>
   
   <h4 align="center"><a href="https://github.com/gabriel-bronfman">Gabriel Bronfman</a>, <a href="https://github.com/iamshubhamgupto">Shubham Gupta</a></h4>
   
