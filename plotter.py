@@ -59,19 +59,16 @@ def draw_graph_with_target(graph_data, target, player_position, window_size=(800
     img_width, img_height = fig.get_size_inches() * fig.get_dpi()
     img_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(int(img_height), int(img_width), 4)
 
-    # Resize the image to fit the Pygame window
-    img_resized = cv2.resize(img_array, window_size, interpolation=cv2.INTER_AREA)
-
     # Convert RGBA to BGR (OpenCV uses BGR order)
-    img_bgr = cv2.cvtColor(img_resized, cv2.COLOR_RGBA2BGR)
+    img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGBA2BGR)
     return img_bgr
 
 
 def main_plotting_process():
     pygame.init()
     window_size = (800, 600)
-    screen = pygame.display.set_mode(window_size)
-    pygame.display.set_caption('Mapping')
+    # screen = pygame.display.set_mode(window_size)
+    # pygame.display.set_caption('Mapping')
 
     redis_conn = connect_to_redis()
 
@@ -86,11 +83,13 @@ def main_plotting_process():
 
         if graph_data and target and player_position:
             img_bgr = draw_graph_with_target(graph_data, target, player_position, window_size)
-            img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-            img_rgb = np.rot90(img_rgb)
-            pygame_img = pygame.surfarray.make_surface(img_rgb)
-            screen.blit(pygame_img, (0, 0))
-            pygame.display.update()
+            # img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+            cv2.imshow('Real-Time Graph', img_bgr)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):  # Exit on pressing 'q'
+                break
+
+    cv2.destroyAllWindows()
 
         # pygame.time.wait(10)  # Wait a bit to not consume too much CPU
 
