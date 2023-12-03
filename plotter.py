@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import RegularPolygon
 import json
 import redis
 import math
@@ -9,7 +10,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 import pygame
 
 def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0)
+    return redis.Redis(host='localhost', port=6379, db=0, password='robot_interface')
 
 def deserialize(data):
     return json.loads(data) if data else None
@@ -18,13 +19,14 @@ def get_redis_data(redis_conn):
     graph_data = deserialize(redis_conn.get('graph_data'))
     target = deserialize(redis_conn.get('target'))
     player_position = deserialize(redis_conn.get('player_position'))
-    return graph_data, target, player_position
+    player_orientation = deserialize(redis_conn.get('player_orientation'))
+    return graph_data, target, player_position, player_orientation
 
 def euclidean_distance(p1, p2):
     """Calculate the Euclidean distance between two points."""
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
-def draw_graph_with_target(graph_data, target, player_position, window_size=(800, 600)):
+def draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size=(800, 600)):
     if graph_data is None:
         return None
     print(graph_data)
@@ -39,6 +41,8 @@ def draw_graph_with_target(graph_data, target, player_position, window_size=(800
     node_colors = []
 
     for node in graph.nodes:
+        if euclidean_distance(node, target) < 25 and euclidean_distance(player_position, node) < 25:
+            node_colors.append('green')
         if euclidean_distance(node, target) < 25:
             node_colors.append('red')
         elif euclidean_distance(player_position, node) < 25:
@@ -79,10 +83,10 @@ def main_plotting_process():
                 pygame.quit()
                 return
 
-        graph_data, target, player_position = get_redis_data(redis_conn)
+        graph_data, target, player_position, player_orientation = get_redis_data(redis_conn)
 
         if graph_data and target and player_position:
-            img_bgr = draw_graph_with_target(graph_data, target, player_position, window_size)
+            img_bgr = draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size)
             # img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
             cv2.imshow('Real-Time Graph', img_bgr)
 
