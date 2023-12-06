@@ -47,7 +47,7 @@ class KeyboardPlayerPyGame(Player):
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
         
-        self.redis = redis.Redis(host='localhost', port=6379, db=0) 
+        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0,password='robot_interface') 
         self.redis.flushall()
         super(KeyboardPlayerPyGame, self).__init__()
 
@@ -82,50 +82,86 @@ class KeyboardPlayerPyGame(Player):
             return self.last_act
         else:
             self.turn_count = 0
+            pygame.event.set_allowed(pygame.KEYDOWN)
+            pygame.event.set_allowed(pygame.KEYUP)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                self.last_act = Action.QUIT
-                self.redis.flushall()
-                self.redis.flushdb()
-                self.redis.close()
-                return Action.QUIT
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    self.last_act = Action.QUIT
+                    self.redis.flushall()
+                    self.redis.flushdb()
+                    self.redis.close()
+                    return Action.QUIT
 
-            if event.type == pygame.KEYDOWN:
-                if event.key in self.keymap:
-                    if event.key == pygame.K_p:
-                        self.pre_navigation_bypass()
-                    elif event.key == pygame.K_r:
-                        self.player_position = (0,0)
-                    elif event.key == pygame.K_t:
-                        self.direction = 0
+                if event.type == pygame.KEYDOWN:
+                    if event.key in self.keymap:
+                        if event.key == pygame.K_p:
+                            self.pre_navigation_bypass()
+                        elif event.key == pygame.K_r:
+                            self.player_position = (0,0)
+                        elif event.key == pygame.K_t:
+                            self.direction = 0
 
+                        else:
+                            self.key_hold_state[event.key] = True
+                            self.last_act |= self.keymap[event.key]
+                            if self.keymap[event.key] == Action.LEFT:  
+                                pygame.event.set_blocked(pygame.KEYDOWN)
+                                pygame.event.set_blocked(pygame.KEYUP)
+                                self.turn_count = 1
+                                self.direction += 90
+                            elif self.keymap[event.key] == Action.RIGHT:
+                                pygame.event.set_blocked(pygame.KEYDOWN)
+                                pygame.event.set_blocked(pygame.KEYUP)
+                                self.turn_count = 1
+                                self.direction += -90
+
+                        
                     else:
-                        self.key_hold_state[event.key] = True
-                        self.last_act |= self.keymap[event.key]
-                        if self.keymap[event.key] == Action.LEFT:  
-                            self.turn_count = 1
-                            self.direction += 90
-                        elif self.keymap[event.key] == Action.RIGHT:
-                            self.turn_count = 1
-                            self.direction += -90
-
-                    
-                else:
-                    
-                    self.show_target_images()
-            if event.type == pygame.KEYUP:
-                if event.key in self.keymap:
-                    if event.key == pygame.K_p or event.key == pygame.K_r or event.key == pygame.K_t:
-                        pass
-                    else:
-                        self.key_hold_state[event.key] = False
-                        self.last_act ^= self.keymap[event.key]
+                        
+                        self.show_target_images()
+                if event.type == pygame.KEYUP:
+                    if event.key in self.keymap:
+                        if event.key == pygame.K_p or event.key == pygame.K_r or event.key == pygame.K_t:
+                            pass
+                        else:
+                            self.key_hold_state[event.key] = False
+                            self.last_act ^= self.keymap[event.key]
         
         self.update_map_on_keypress()
         return self.last_act
     
+
+    def show_target_images_default(self):
+        targets = self.get_target_images()
+        if targets is None or len(targets) <= 0:
+            return
+        hor1 = cv2.hconcat(targets[:2])
+        hor2 = cv2.hconcat(targets[2:])
+        concat_img = cv2.vconcat([hor1, hor2])
+
+        w, h = concat_img.shape[:2]
+        
+        color = (0, 0, 0)
+
+        concat_img = cv2.line(concat_img, (int(h/2), 0), (int(h/2), w), color, 2)
+        concat_img = cv2.line(concat_img, (0, int(w/2)), (h, int(w/2)), color, 2)
+
+        w_offset = 25
+        h_offset = 10
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        line = cv2.LINE_AA
+        size = 0.75
+        stroke = 1
+
+        cv2.putText(concat_img, 'Front View', (h_offset, w_offset), font, size, color, stroke, line)
+        cv2.putText(concat_img, 'Left View', (int(h/2) + h_offset, w_offset), font, size, color, stroke, line)
+        cv2.putText(concat_img, 'Back View', (h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
+        cv2.putText(concat_img, 'Right View', (int(h/2) + h_offset, int(w/2) + w_offset), font, size, color, stroke, line)
+
+        cv2.imshow(f'KeyboardPlayer:target_images', concat_img)
+        cv2.waitKey(1)
 
     def show_target_images(self):
         self.player_position = (0,0)
@@ -259,6 +295,8 @@ class KeyboardPlayerPyGame(Player):
             self.target = np.ravel(self.target)
             self.target_index = int(input(f"Enter the row index (between 0 and {len(self.target) - 1}): ")) - 1
             cv2.destroyAllWindows()
+            self.show_target_images_default()
+            cv2.moveWindow("KeyboardPlayer:target_images", 500, 200)
             
 
     def pre_navigation(self):
@@ -414,6 +452,7 @@ class KeyboardPlayerPyGame(Player):
         self.redis.set('graph_data', serialize(nx.node_link_data(self.graph)))
         self.redis.set('target', serialize(self.poses[self.target[self.target_index]]))
         self.redis.set('player_position', serialize(self.player_position))
+        self.redis.set('player_orientation', serialize(self.direction))
 
 def serialize(data):
     return json.dumps(data)
