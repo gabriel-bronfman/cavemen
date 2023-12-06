@@ -43,7 +43,7 @@ def draw_graph_with_target(graph_data, target, player_position, player_orientati
     for node in graph.nodes:
         if euclidean_distance(node, target) < 25 and euclidean_distance(player_position, node) < 25:
             node_colors.append('green')
-        if euclidean_distance(node, target) < 25:
+        elif euclidean_distance(node, target) < 25:
             node_colors.append('red')
         elif euclidean_distance(player_position, node) < 25:
             node_colors.append('yellow')
