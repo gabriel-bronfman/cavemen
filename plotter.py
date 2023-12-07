@@ -26,7 +26,21 @@ def euclidean_distance(p1, p2):
     """Calculate the Euclidean distance between two points."""
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
+def rotate_map(map, direction):
+    map = cv2.rotate(map,cv2.ROTATE_90_COUNTERCLOCKWISE)
+    if direction == 0:
+        pass
+    elif direction == 90:
+        map = cv2.rotate(map,cv2.ROTATE_90_COUNTERCLOCKWISE)
+    elif direction == 180:
+        map = cv2.rotate(map,cv2.ROTATE_180)
+    else:
+        map = cv2.rotate(map,cv2.ROTATE_90_CLOCKWISE)
+    return map
+        
+
 def draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size=(800, 600)):
+
     if graph_data is None:
         return None
     print(graph_data)
@@ -71,10 +85,12 @@ def draw_graph_with_target(graph_data, target, player_position, player_orientati
 def main_plotting_process():
     pygame.init()
     window_size = (800, 600)
+    
     # screen = pygame.display.set_mode(window_size)
     # pygame.display.set_caption('Mapping')
 
     redis_conn = connect_to_redis()
+    redis_conn.flushall()
 
     while True:
         # Check for Pygame events
@@ -88,6 +104,7 @@ def main_plotting_process():
         if graph_data and target and player_position:
             img_bgr = draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size)
             # img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+            img_bgr = rotate_map(img_bgr, player_orientation)
             cv2.imshow('Real-Time Graph', img_bgr)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):  # Exit on pressing 'q'
