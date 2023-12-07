@@ -7,10 +7,9 @@ import redis
 import math
 import networkx as nx
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-import pygame
 
 def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0, password='robot_interface')
+    return redis.Redis(host='localhost', port=6379, db=0)
 
 def deserialize(data):
     return json.loads(data) if data else None
@@ -83,21 +82,12 @@ def draw_graph_with_target(graph_data, target, player_position, player_orientati
 
 
 def main_plotting_process():
-    pygame.init()
     window_size = (800, 600)
-    
-    # screen = pygame.display.set_mode(window_size)
-    # pygame.display.set_caption('Mapping')
 
     redis_conn = connect_to_redis()
     redis_conn.flushall()
 
     while True:
-        # Check for Pygame events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
 
         graph_data, target, player_position, player_orientation = get_redis_data(redis_conn)
 
@@ -111,8 +101,6 @@ def main_plotting_process():
                 break
 
     cv2.destroyAllWindows()
-
-        # pygame.time.wait(10)  # Wait a bit to not consume too much CPU
 
 
 if __name__ == "__main__":

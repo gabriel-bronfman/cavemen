@@ -47,7 +47,7 @@ class KeyboardPlayerPyGame(Player):
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
         
-        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0,password='robot_interface') 
+        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0) 
         self.redis.flushall()
         super(KeyboardPlayerPyGame, self).__init__()
 
@@ -317,7 +317,7 @@ class KeyboardPlayerPyGame(Player):
             print(f"Creating dictionary for images")
             self.visual_dictionary = create_visual_dictionary(np.vstack(descriptors), num_clusters=100)
             print(f"Creating {len(self.images)} histograms")
-            self.histograms = generate_feature_histograms(keypoints, descriptors, self.visual_dictionary)   
+            self.histograms = generate_feature_histograms(descriptors, self.visual_dictionary)   
 
     def find_targets(self):
         targets = self.get_target_images()
