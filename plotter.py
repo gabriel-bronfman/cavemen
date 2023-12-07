@@ -10,7 +10,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 import pygame
 
 def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0, password='robot_interface')
+    return redis.Redis(host='localhost', port=6379, db=0)
 
 def deserialize(data):
     return json.loads(data) if data else None
