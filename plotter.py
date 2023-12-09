@@ -7,9 +7,11 @@ import redis
 import math
 import networkx as nx
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+import heapq
+
 
 def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0)
+    return redis.Redis(host='localhost', port=6379, db=0, password="robot_interface")
 
 def deserialize(data):
     return json.loads(data) if data else None
@@ -23,7 +25,51 @@ def get_redis_data(redis_conn):
 
 def euclidean_distance(p1, p2):
     """Calculate the Euclidean distance between two points."""
+    # if p1 is not None and p2 is not None:
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+    #return None
+
+def astar(graph, start, target):
+
+    graph = nx.node_link_graph(graph)
+
+    for node in graph.nodes:
+        if start[0] == node[0] and start[1] == node[1]:
+            start = node
+        elif target[0] == node[0] and target[1] == node[1]:
+            target = node
+    
+    priority_queue = [(0, start)]
+    visited = set()
+    parents = {start: None}
+    g_values = {start: 0}
+
+    while priority_queue:
+        current_cost, current_node = heapq.heappop(priority_queue)
+
+        if current_node == target:
+            path = []
+            while current_node is not None:
+                path.append(current_node)
+                current_node = parents[current_node]
+            return path[::-1]
+
+        if current_node in visited:
+            continue
+
+        visited.add(current_node)
+
+        for neighbor in graph.neighbors(current_node):
+            new_g = g_values[current_node] + graph[current_node][neighbor].get('weight', 1)
+
+            if neighbor not in g_values or new_g < g_values[neighbor]:
+                g_values[neighbor] = new_g
+                
+                f_value = new_g + euclidean_distance(neighbor, target)
+                heapq.heappush(priority_queue, (f_value, neighbor))
+                parents[neighbor] = current_node
+
+    return None
 
 def rotate_map(map, direction):
     map = cv2.rotate(map,cv2.ROTATE_90_COUNTERCLOCKWISE)
@@ -38,11 +84,11 @@ def rotate_map(map, direction):
     return map
         
 
-def draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size=(800, 600)):
+def draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size=(800, 600), path=None):
 
     if graph_data is None:
         return None
-    print(graph_data)
+    # print(graph_data)
 
     # Create a graph from the graph data
     graph = nx.node_link_graph(graph_data)
@@ -62,6 +108,16 @@ def draw_graph_with_target(graph_data, target, player_position, player_orientati
             node_colors.append('yellow')
         else:
             node_colors.append('blue')
+    if path is not None:
+        # print("I am doing it")
+        for index, node in enumerate(graph.nodes):
+            for path_node in path:
+                if euclidean_distance(node, path_node) < 25 and euclidean_distance(node, target) > 20:
+                    if euclidean_distance(node, player_position) > 25:
+                        node_colors[index] = 'black'
+                    else:
+                        pass
+
 
     # Draw the graph
     nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
@@ -87,14 +143,24 @@ def main_plotting_process():
     redis_conn = connect_to_redis()
     redis_conn.flushall()
 
+    path_found = False
+
     while True:
 
         graph_data, target, player_position, player_orientation = get_redis_data(redis_conn)
 
         if graph_data and target and player_position:
-            img_bgr = draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size)
+
+            if not path_found:
+                
+                path = astar(graph_data,(0,0),target)
+                path_found = True
+                print(path)
+
+            img_bgr = draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size, path)
             # img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-            img_bgr = rotate_map(img_bgr, player_orientation)
+            #img_bgr = rotate_map(img_bgr, player_orientation)
+            img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
             cv2.imshow('Real-Time Graph', img_bgr)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):  # Exit on pressing 'q'

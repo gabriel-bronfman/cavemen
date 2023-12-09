@@ -1,7 +1,7 @@
 import cv2
 import os
 # from sklearn.cluster import KMeans
-from python_orb_slam3 import ORBExtractor
+#from python_orb_slam3 import ORBExtractor
 import numpy as np
 import faiss
 
@@ -15,7 +15,7 @@ def load_images_from_folder(folder_path):
     return images
 
 def extract_sift_features(images):
-    sift = ORBExtractor()
+    sift = cv2.SIFT_create()
     keypoints_list = []
     descriptors_list = []
 
@@ -102,7 +102,7 @@ def compare_histograms(query_histogram, list_of_histograms):
 
 def process_image_and_find_best_match(new_image, list_of_histograms, kmeans):
     # Step 1: Extract features from the new image
-    sift = ORBExtractor()
+    sift = cv2.SIFT_create()
     keypoints, descriptors = sift.detectAndCompute(new_image, None)
     
     # Ensure descriptors are in the correct format (np.float32)

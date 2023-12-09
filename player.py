@@ -12,6 +12,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 import redis
 import json
 import subprocess
+import time
 
 ROTATE_VALUE = 2.415
 MOVE_VALUE = 5
@@ -47,7 +48,7 @@ class KeyboardPlayerPyGame(Player):
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
         self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
         
-        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0) 
+        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0, password='robot_interface') 
         self.redis.flushall()
         super(KeyboardPlayerPyGame, self).__init__()
 
@@ -77,6 +78,7 @@ class KeyboardPlayerPyGame(Player):
         }
 
     def act(self):
+        time.sleep(.002)
         if 0 < self.turn_count < 37:
             self.turn_count += 1
             return self.last_act
