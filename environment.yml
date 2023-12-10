@@ -1,14 +1,18 @@
 name: game
 channels:
+  - pytorch
   - conda-forge
   - defaults
 dependencies:
+  - blas=1.0
   - bullet-cpp=3.24
   - bzip2=1.0.8
-  - ca-certificates=2023.7.22
+  - ca-certificates=2023.08.22
+  - faiss-cpu=1.7.4
   - libblas=3.9.0
   - libcblas=3.9.0
   - libcxx=16.0.6
+  - libfaiss=1.7.4
   - libffi=3.4.2
   - libgfortran=5.0.0
   - libgfortran5=13.2.0
@@ -19,6 +23,7 @@ dependencies:
   - libzlib=1.2.13
   - llvm-openmp=17.0.3
   - ncurses=6.4
+  - numpy-base=1.26.2
   - openssl=3.1.4
   - pip=23.2.1
   - pthread-stubs=0.4
@@ -41,6 +46,7 @@ dependencies:
   - pip:
       - async-timeout==4.0.3
       - beautifulsoup4==4.12.2
+      - bokeh==2.4.3
       - build==1.0.3
       - cachecontrol==0.13.1
       - certifi==2023.7.22
@@ -90,7 +96,6 @@ dependencies:
       - pygame==2.5.2
       - pyopengl==3.1.7
       - pyopengl-accelerate==3.1.7
-      - pypangolin==0.8
       - pyparsing==3.1.1
       - pyproject-hooks==1.0.0
       - pysocks==1.7.1
@@ -118,7 +123,7 @@ dependencies:
       - typing-extensions==4.8.0
       - urllib3==2.0.7
       - virtualenv==20.24.6
-      - vis-nav-game==1.1.1
+      - vis-nav-game==1.1.2
       - xattr==0.10.1
       - zipp==3.17.0
       - zmq==0.0.0
