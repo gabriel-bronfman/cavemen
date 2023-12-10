@@ -11,7 +11,7 @@ import heapq
 
 
 def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0, password="robot_interface")
+    return redis.Redis(host='localhost', port=6379, db=0)
 
 def deserialize(data):
     return json.loads(data) if data else None
@@ -29,25 +29,42 @@ def euclidean_distance(p1, p2):
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
     #return None
 
-def astar(graph, start, target):
-
-    graph = nx.node_link_graph(graph)
+def find_closest_node(graph, point, threshold=1.0):
+    closest_node = None
+    closest_dist = float('inf')
 
     for node in graph.nodes:
-        if start[0] == node[0] and start[1] == node[1]:
-            start = node
-        elif target[0] == node[0] and target[1] == node[1]:
-            target = node
-    
-    priority_queue = [(0, start)]
+        dist = euclidean_distance(point, node)
+        if dist < closest_dist:
+            closest_dist = dist
+            closest_node = node
+
+    # Only return the closest node if it is within the threshold
+    if closest_dist <= threshold:
+        return closest_node
+    else:
+        return None
+
+def astar(graph_data, start, target, threshold=1.0):
+    graph = nx.node_link_graph(graph_data)
+
+    # Find the closest nodes in the graph to the given start and target
+    closest_start = find_closest_node(graph, start, threshold)
+    closest_target = find_closest_node(graph, target, threshold)
+
+    # If closest nodes are not found within the threshold, return None
+    if closest_start is None or closest_target is None:
+        return None
+
+    priority_queue = [(0, closest_start)]
     visited = set()
-    parents = {start: None}
-    g_values = {start: 0}
+    parents = {closest_start: None}
+    g_values = {closest_start: 0}
 
     while priority_queue:
         current_cost, current_node = heapq.heappop(priority_queue)
 
-        if current_node == target:
+        if current_node == closest_target:
             path = []
             while current_node is not None:
                 path.append(current_node)
@@ -64,11 +81,11 @@ def astar(graph, start, target):
 
             if neighbor not in g_values or new_g < g_values[neighbor]:
                 g_values[neighbor] = new_g
-                
-                f_value = new_g + euclidean_distance(neighbor, target)
+                f_value = new_g + euclidean_distance(neighbor, closest_target)
                 heapq.heappush(priority_queue, (f_value, neighbor))
                 parents[neighbor] = current_node
 
+    # Return None if a path cannot be found
     return None
 
 def rotate_map(map, direction):
@@ -84,41 +101,27 @@ def rotate_map(map, direction):
     return map
         
 
-def draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size=(800, 600), path=None):
-
+def draw_graph_with_target(graph_data, target, player_position, path=None):
     if graph_data is None:
         return None
-    # print(graph_data)
 
     # Create a graph from the graph data
     graph = nx.node_link_graph(graph_data)
 
-
-    # Extract positions and rotations from nodes
+    # Extract positions from nodes (assuming they are 2D coordinates)
     pos = {node: (node[0], node[1]) for node in graph.nodes()}
-    rotations = {node: node[2] for node in graph.nodes()}
     node_colors = []
 
+    # Determine the color of each node based on proximity to player, target, and path
     for node in graph.nodes:
-        if euclidean_distance(node, target) < 25 and euclidean_distance(player_position, node) < 25:
-            node_colors.append('green')
-        elif euclidean_distance(node, target) < 25:
-            node_colors.append('red')
-        elif euclidean_distance(player_position, node) < 25:
-            node_colors.append('yellow')
-        else:
-            node_colors.append('blue')
-    if path is not None:
-        # print("I am doing it")
-        for index, node in enumerate(graph.nodes):
-            for path_node in path:
-                if euclidean_distance(node, path_node) < 25 and euclidean_distance(node, target) > 20:
-                    if euclidean_distance(node, player_position) > 25:
-                        node_colors[index] = 'black'
-                    else:
-                        pass
-
-
+        color = 'blue'
+        if path and node in path:
+            color = 'black'  # Path nodes
+        if euclidean_distance(node, target) < 25:
+            color = 'red'  # Nodes close to the target
+        if euclidean_distance(node, player_position) < 25:
+            color = 'yellow'  # Nodes close to the player
+        node_colors.append(color)
     # Draw the graph
     nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
 
@@ -152,12 +155,14 @@ def main_plotting_process():
         if graph_data and target and player_position:
 
             if not path_found:
-                
-                path = astar(graph_data,(0,0),target)
-                path_found = True
-                print(path)
+                path = astar(graph_data,player_position,target, threshold=25)
+                if path is not None:
+                    path_found = True
+                    print(path)
+                else:
+                    print('Path is None')
 
-            img_bgr = draw_graph_with_target(graph_data, target, player_position, player_orientation, window_size, path)
+            img_bgr = draw_graph_with_target(graph_data, target, player_position, path)
             # img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
             #img_bgr = rotate_map(img_bgr, player_orientation)
             img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
@@ -167,6 +172,7 @@ def main_plotting_process():
                 break
 
     cv2.destroyAllWindows()
+    redis_conn.flushall()
 
 
 if __name__ == "__main__":
