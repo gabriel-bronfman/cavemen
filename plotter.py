@@ -11,7 +11,7 @@ import heapq
 
 
 def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0)
+    return redis.Redis(host='localhost', port=6379, db=0, password='robot_interface')
 
 def deserialize(data):
     return json.loads(data) if data else None
