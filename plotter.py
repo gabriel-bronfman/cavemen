@@ -108,26 +108,42 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
     # Create a graph from the graph data
     graph = nx.node_link_graph(graph_data)
 
-    # Extract positions from nodes (assuming they are 2D coordinates)
+    # Extract positions from nodes
     pos = {node: (node[0], node[1]) for node in graph.nodes()}
     node_colors = []
 
-    # Determine the color of each node based on proximity to player, target, and path
+    # Determine the color of each node
     for node in graph.nodes:
-        color = 'blue'
+        color = 'blue'  # Regular node
         if path and node in path:
-            color = 'black'  # Path nodes
+            color = 'black'  # A* path node
         if euclidean_distance(node, target) < 25:
-            color = 'red'  # Nodes close to the target
+            color = 'red'  # Target node
         if euclidean_distance(node, player_position) < 25:
-            color = 'yellow'  # Nodes close to the player
+            color = 'yellow'  # Current position node
+        if euclidean_distance(target, player_position) < 25:
+            color = 'green'  # Target and current position overlap
         node_colors.append(color)
+
     # Draw the graph
     nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
+
+    # Create custom handles for the legend
+    legend_handles = [
+        plt.Line2D([0], [0], marker='o', color='w', label='Regular Node', markersize=10, markerfacecolor='blue'),
+        plt.Line2D([0], [0], marker='o', color='w', label='A* Path Node', markersize=10, markerfacecolor='black'),
+        plt.Line2D([0], [0], marker='o', color='w', label='Target Node', markersize=10, markerfacecolor='red'),
+        plt.Line2D([0], [0], marker='o', color='w', label='Current Position Node', markersize=10, markerfacecolor='yellow'),
+        plt.Line2D([0], [0], marker='o', color='w', label='Overlap Node', markersize=10, markerfacecolor='green')
+    ]
+    plt.legend(handles=legend_handles)
 
     # Get the Matplotlib figure and axis
     fig = plt.gcf()
     ax = plt.gca()
+
+    # Rotate the graph if needed
+    # ax.view_init(azim=-90) # Uncomment if rotation is required
 
     # Convert the Matplotlib figure to a NumPy array
     canvas = FigureCanvasAgg(fig)
