@@ -1,28 +1,30 @@
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon
-import json
-import redis
-from redis.exceptions import AuthenticationError
-import math
-import networkx as nx
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 import heapq
+import json
+import math
 
-from utils import euclidean_distance, deserialize, connect_to_redis
+import cv2
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import redis
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.patches import RegularPolygon
+from redis.exceptions import AuthenticationError
+
+from utils import connect_to_redis, deserialize, euclidean_distance
 
 
 def get_redis_data(redis_conn):
-    graph_data = deserialize(redis_conn.get('graph_data'))
-    target = deserialize(redis_conn.get('target'))
-    player_position = deserialize(redis_conn.get('player_position'))
-    player_orientation = deserialize(redis_conn.get('player_orientation'))
+    graph_data = deserialize(redis_conn.get("graph_data"))
+    target = deserialize(redis_conn.get("target"))
+    player_position = deserialize(redis_conn.get("player_position"))
+    player_orientation = deserialize(redis_conn.get("player_orientation"))
     return graph_data, target, player_position, player_orientation
+
 
 def find_closest_node(graph, point, threshold=1.0):
     closest_node = None
-    closest_dist = float('inf')
+    closest_dist = float("inf")
 
     for node in graph.nodes:
         dist = euclidean_distance(point, node)
@@ -35,6 +37,7 @@ def find_closest_node(graph, point, threshold=1.0):
         return closest_node
     else:
         return None
+
 
 def astar(graph_data, start, target, threshold=1.0):
     graph = nx.node_link_graph(graph_data)
@@ -68,7 +71,9 @@ def astar(graph_data, start, target, threshold=1.0):
         visited.add(current_node)
 
         for neighbor in graph.neighbors(current_node):
-            new_g = g_values[current_node] + graph[current_node][neighbor].get('weight', 1)
+            new_g = g_values[current_node] + graph[current_node][neighbor].get(
+                "weight", 1
+            )
 
             if neighbor not in g_values or new_g < g_values[neighbor]:
                 g_values[neighbor] = new_g
@@ -79,18 +84,19 @@ def astar(graph_data, start, target, threshold=1.0):
     # Return None if a path cannot be found
     return None
 
+
 def rotate_map(map, direction):
-    map = cv2.rotate(map,cv2.ROTATE_90_COUNTERCLOCKWISE)
+    map = cv2.rotate(map, cv2.ROTATE_90_COUNTERCLOCKWISE)
     if direction == 0:
         pass
     elif direction == 90:
-        map = cv2.rotate(map,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        map = cv2.rotate(map, cv2.ROTATE_90_COUNTERCLOCKWISE)
     elif direction == 180:
-        map = cv2.rotate(map,cv2.ROTATE_180)
+        map = cv2.rotate(map, cv2.ROTATE_180)
     else:
-        map = cv2.rotate(map,cv2.ROTATE_90_CLOCKWISE)
+        map = cv2.rotate(map, cv2.ROTATE_90_CLOCKWISE)
     return map
-        
+
 
 def draw_graph_with_target(graph_data, target, player_position, path=None):
     if graph_data is None:
@@ -105,19 +111,26 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
 
     # Determine the color of each node
     for node in graph.nodes:
-        color = 'black'  # Regular node
+        color = "black"  # Regular node
         if path and node in path:
-            color = 'blue'  # A* path node
+            color = "blue"  # A* path node
         if euclidean_distance(node, player_position) < 25:
-            color = 'yellow'  # Current position node
+            color = "yellow"  # Current position node
         if euclidean_distance(node, target) < 25:
-            color = 'red'  # Target node
+            color = "red"  # Target node
         if euclidean_distance(target, player_position) < 25:
-            color = 'green'  # Target and current position overlap
+            color = "green"  # Target and current position overlap
         node_colors.append(color)
 
     # Draw the graph
-    nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
+    nx.draw(
+        graph,
+        pos,
+        node_color=node_colors,
+        node_size=400,
+        arrowstyle="<|-|>",
+        arrowsize=15,
+    )
 
     # # Create custom handles for the legend
     # legend_handles = [
@@ -141,7 +154,9 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
     canvas = FigureCanvasAgg(fig)
     canvas.draw()
     img_width, img_height = fig.get_size_inches() * fig.get_dpi()
-    img_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(int(img_height), int(img_width), 4)
+    img_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(
+        int(img_height), int(img_width), 4
+    )
 
     # Convert RGBA to BGR (OpenCV uses BGR order)
     img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGBA2BGR)
@@ -149,30 +164,29 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
 
 
 def main_plotting_process():
-
     redis_conn = connect_to_redis()
     redis_conn.flushall()
 
     path_found = False
 
     while True:
-
-        graph_data, target, player_position, player_orientation = get_redis_data(redis_conn)
+        graph_data, target, player_position, player_orientation = get_redis_data(
+            redis_conn
+        )
 
         if graph_data and target and player_position:
-
             if not path_found:
-                path = astar(graph_data,player_position,target, threshold=25)
+                path = astar(graph_data, player_position, target, threshold=25)
                 if path is not None:
                     path_found = True
                 else:
-                    print('Path is None')
+                    print("Path is None")
 
             img_bgr = draw_graph_with_target(graph_data, target, player_position, path)
             img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            cv2.imshow('Real-Time Graph', img_bgr)
+            cv2.imshow("Real-Time Graph", img_bgr)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):  # Exit on pressing 'q'
+            if cv2.waitKey(1) & 0xFF == ord("q"):  # Exit on pressing 'q'
                 break
 
     cv2.destroyAllWindows()

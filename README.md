@@ -1,9 +1,9 @@
 <p align="center">
 
   <h1 align="center">🗿 Cavemen: A prehistoric approach for mapless navigation</h1>
-  
+
   <h4 align="center"><a href="https://github.com/gabriel-bronfman">Gabriel Bronfman</a>, <a href="https://github.com/iamshubhamgupto">Shubham Gupta</a></h4>
-  
+
   <h5 align="center">&emsp; <a href="https://docs.google.com/presentation/d/1YwzE0sU7YGphtKLduPHkAlaf1JeGr86exQJ9t-L-AA8/edit?usp=sharing"> Slides</a> | <a href=""> Report [Coming Soon] </a> | <a href=""> Code [Coming Soon] </a></h5>
 
   <!-- Images container -->
@@ -20,7 +20,7 @@
 
 
 ## Abstract
-    
+
 This repository contains the source code for submission made by the team `Shoob and Goob`. The goal of the project is to map and localize views in previously unexplored 3D worlds. We implement the Dead Reckoning algorithm to keep track of the movement from the given origin. We extract ORB features of the 3D world which is then used to train a Visual Bag of Words on all scenes seen by the robot during the exploration phase. We are able to localize the target scene before the navigation phase begins with the coordinates and rotation.
 
 ## Installation
