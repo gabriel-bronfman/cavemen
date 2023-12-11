@@ -13,8 +13,6 @@ import numpy as np
 import pygame
 import redis
 import vis_nav_game
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from redis.exceptions import AuthenticationError
 from vis_nav_game import Action, Player
 
 from place_recognition import (
