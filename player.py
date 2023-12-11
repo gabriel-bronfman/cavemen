@@ -78,7 +78,7 @@ class KeyboardPlayerPyGame(Player):
         }
 
     def act(self):
-        time.sleep(.002)
+        time.sleep(.005)
         if 0 < self.turn_count < 37:
             self.turn_count += 1
             return self.last_act
@@ -453,7 +453,7 @@ class KeyboardPlayerPyGame(Player):
             return
         self.redis.set('graph_data', serialize(nx.node_link_data(self.graph)))
         self.redis.set('target', serialize(self.poses[self.target[self.target_index]]))
-        self.redis.set('player_position', serialize(self.player_position))
+        self.uparrow = self.redis.set('player_position', serialize(self.player_position))
         self.redis.set('player_orientation', serialize(self.direction))
 
 def serialize(data):

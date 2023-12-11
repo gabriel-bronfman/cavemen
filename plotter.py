@@ -114,9 +114,9 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
 
     # Determine the color of each node
     for node in graph.nodes:
-        color = 'blue'  # Regular node
+        color = 'black'  # Regular node
         if path and node in path:
-            color = 'black'  # A* path node
+            color = 'blue'  # A* path node
         if euclidean_distance(node, target) < 25:
             color = 'red'  # Target node
         if euclidean_distance(node, player_position) < 25:

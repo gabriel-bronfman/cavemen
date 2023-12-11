@@ -23,11 +23,7 @@ def extract_sift_features(images):
         keypoints, descriptors = sift.detectAndCompute(image, None)
         keypoints_list.append(keypoints)
         descriptors_list.append(descriptors)
-        if len(descriptors) < 10 or len(keypoints) < 10:
-            print(descriptors)
-            print(keypoints)
-            cv2.imshow("problem", image)
-            cv2.waitKey(0)
+        
 
     return keypoints_list, descriptors_list
 
