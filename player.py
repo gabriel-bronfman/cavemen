@@ -13,8 +13,6 @@ import numpy as np
 import pygame
 import redis
 import vis_nav_game
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from redis.exceptions import AuthenticationError
 from vis_nav_game import Action, Player
 
 from place_recognition import (
@@ -521,6 +519,7 @@ class KeyboardPlayerPyGame(Player):
             )
             move_x = move_amount * np.cos(np.deg2rad(self.direction))
             move_y = move_amount * np.sin(np.deg2rad(self.direction))
+            
         self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
         if not self.nav:
             sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')

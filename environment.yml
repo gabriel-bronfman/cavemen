@@ -51,6 +51,7 @@ dependencies:
       - cachecontrol==0.13.1
       - certifi==2023.7.22
       - cffi==1.16.0
+      - cfgv==3.4.0
       - charset-normalizer==3.3.1
       - cleo==2.1.0
       - contourpy==1.1.1
@@ -64,6 +65,7 @@ dependencies:
       - filelock==3.12.4
       - fonttools==4.43.1
       - gdown==4.7.1
+      - identify==2.5.33
       - idna==3.4
       - imageio==2.31.6
       - importlib-metadata==6.8.0
@@ -79,6 +81,7 @@ dependencies:
       - more-itertools==10.1.0
       - msgpack==1.0.7
       - networkx==3.2.1
+      - nodeenv==1.8.0
       - numpy==1.25.2
       - opencv-python==4.8.0.76
       - packaging==23.2
@@ -90,6 +93,7 @@ dependencies:
       - poetry==1.7.0
       - poetry-core==1.8.1
       - poetry-plugin-export==1.6.0
+      - pre-commit==3.6.0
       - ptyprocess==0.7.0
       - pybind11==2.11.1
       - pycparser==2.21
@@ -100,6 +104,7 @@ dependencies:
       - pyproject-hooks==1.0.0
       - pysocks==1.7.1
       - python-dateutil==2.8.2
+      - python-dotenv==1.0.0
       - pyyaml==6.0.1
       - pyzmq==25.1.1
       - rapidfuzz==3.5.2

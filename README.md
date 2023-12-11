@@ -41,6 +41,27 @@ Play using the default keyboard player
 conda activate game
 python player.py
 ```
+### Redis environment
+We use Python environment files to store redis database details. A sample `.env` for the project is provided below
+```
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=robot_interface
+```
+
+## Development
+We use [pre-commit](https://pre-commit.com/index.html) to format and style our code. To contribute to this project, first clone the repository and activate the environment. Then run the following:
+```
+pre-commit install
+```
+Once the hooks are installed, continue committing to the repository as usual. The first commit will be slow.
+
+### To update the environment
+```
+conda env export --no-builds | grep -v "prefix" > environment.yml
+```
+
 
 ### Key bindings
 | <b> Key </b>    | <b> Bindings </b>                               |
