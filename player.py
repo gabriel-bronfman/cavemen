@@ -89,7 +89,7 @@ class KeyboardPlayerPyGame(Player):
         }
 
     def act(self) -> Action:
-        time.sleep(0.002)
+        time.sleep(0.005)
         if 0 < self.turn_count < 37:
             self.turn_count += 1
             return self.last_act
