@@ -50,6 +50,9 @@ class KeyboardPlayerPyGame(Player):
         
         self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0, password='robot_interface') 
         self.redis.flushall()
+
+        self.nav_time = 0
+        self.nav = False
         super(KeyboardPlayerPyGame, self).__init__()
 
     def reset(self):
@@ -290,6 +293,10 @@ class KeyboardPlayerPyGame(Player):
 
     def set_target_images(self, images):
         super(KeyboardPlayerPyGame, self).set_target_images(images)
+        if self.get_state() is not None:
+            self.nav_time = self.get_state()[3]
+            self.nav = True
+
         self.target = self.show_target_images()
         
         if self.target is not None:
@@ -371,9 +378,12 @@ class KeyboardPlayerPyGame(Player):
             move_x = move_amount * np.cos(np.deg2rad(self.direction))
             move_y = move_amount * np.sin(np.deg2rad(self.direction))
         self.player_position = (self.player_position[0] + move_x, self.player_position[1] + move_y)
-
-        sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
-        sys.stdout.flush()
+        if not self.nav:
+            sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}')
+            sys.stdout.flush()
+        else:
+            sys.stdout.write(f'\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}, Time: {(self.get_state()[3] - self.nav_time):.2f}')
+            sys.stdout.flush()
 
 
     def create_graph_from_poses(self, threshold=25):
@@ -409,7 +419,7 @@ class KeyboardPlayerPyGame(Player):
         curr_node_index = -1
         graph.add_node(prev_node_pose)
         for curr_node_pose in self.poses[1:]:
-            print(f"i: {curr_node_index} curr_node: {curr_node_pose} ")
+            # print(f"i: {curr_node_index} curr_node: {curr_node_pose} ")
             
             # Check if the node is a duplicate
             is_duplicate = False
@@ -432,11 +442,11 @@ class KeyboardPlayerPyGame(Player):
                 # graph.add_node(tuple(node))  # Adding the node as a tuple to make it hashable
                 visited_poses.append(curr_node_pose)
 
-                print(f"No duplicate on this step, connected node {curr_node_index}: {curr_node_pose} with node {prev_node_index}: {prev_node_pose} \n")
+                # print(f"No duplicate on this step, connected node {curr_node_index}: {curr_node_pose} with node {prev_node_index}: {prev_node_pose} \n")
     
             # If the node is a duplicate and not already in the graph, connect it
             elif curr_node_index > 0 and curr_node_index != prev_node_index and not graph.has_edge(curr_node_pose,prev_node_pose):
-                print(f"Duplicate on this step, connecting {curr_node_index} and {prev_node_index} \n")
+                # print(f"Duplicate on this step, connecting {curr_node_index} and {prev_node_index} \n")
                 graph.add_edge(curr_node_pose, prev_node_pose)
                 graph.add_edge(prev_node_pose, curr_node_pose)
             else:
