@@ -4,17 +4,14 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 import json
 import redis
+from redis.exceptions import AuthenticationError
 import math
 import networkx as nx
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import heapq
 
+from utils import euclidean_distance, deserialize, connect_to_redis
 
-def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0, password='robot_interface')
-
-def deserialize(data):
-    return json.loads(data) if data else None
 
 def get_redis_data(redis_conn):
     graph_data = deserialize(redis_conn.get('graph_data'))
@@ -22,12 +19,6 @@ def get_redis_data(redis_conn):
     player_position = deserialize(redis_conn.get('player_position'))
     player_orientation = deserialize(redis_conn.get('player_orientation'))
     return graph_data, target, player_position, player_orientation
-
-def euclidean_distance(p1, p2):
-    """Calculate the Euclidean distance between two points."""
-    # if p1 is not None and p2 is not None:
-    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-    #return None
 
 def find_closest_node(graph, point, threshold=1.0):
     closest_node = None
@@ -114,13 +105,13 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
 
     # Determine the color of each node
     for node in graph.nodes:
-        color = 'blue'  # Regular node
+        color = 'black'  # Regular node
         if path and node in path:
-            color = 'black'  # A* path node
-        if euclidean_distance(node, target) < 25:
-            color = 'red'  # Target node
+            color = 'blue'  # A* path node
         if euclidean_distance(node, player_position) < 25:
             color = 'yellow'  # Current position node
+        if euclidean_distance(node, target) < 25:
+            color = 'red'  # Target node
         if euclidean_distance(target, player_position) < 25:
             color = 'green'  # Target and current position overlap
         node_colors.append(color)
@@ -128,22 +119,23 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
     # Draw the graph
     nx.draw(graph, pos, node_color=node_colors, node_size=400, arrowstyle='<|-|>', arrowsize=15)
 
-    # Create custom handles for the legend
-    legend_handles = [
-        plt.Line2D([0], [0], marker='o', color='w', label='Regular Node', markersize=10, markerfacecolor='blue'),
-        plt.Line2D([0], [0], marker='o', color='w', label='A* Path Node', markersize=10, markerfacecolor='black'),
-        plt.Line2D([0], [0], marker='o', color='w', label='Target Node', markersize=10, markerfacecolor='red'),
-        plt.Line2D([0], [0], marker='o', color='w', label='Current Position Node', markersize=10, markerfacecolor='yellow'),
-        plt.Line2D([0], [0], marker='o', color='w', label='Overlap Node', markersize=10, markerfacecolor='green')
-    ]
-    plt.legend(handles=legend_handles)
+    # # Create custom handles for the legend
+    # legend_handles = [
+    #     plt.Line2D([0], [0], marker='o', color='w', label='Regular Node', markersize=10, markerfacecolor='black'),
+    #     plt.Line2D([0], [0], marker='o', color='w', label='A* Path Node', markersize=10, markerfacecolor='blue'),
+    #     plt.Line2D([0], [0], marker='o', color='w', label='Target Node', markersize=10, markerfacecolor='red'),
+    #     plt.Line2D([0], [0], marker='o', color='w', label='Current Position Node', markersize=10, markerfacecolor='yellow'),
+    #     plt.Line2D([0], [0], marker='o', color='w', label='Overlap Node', markersize=10, markerfacecolor='green')
+    # ]
+    # legend = plt.legend(handles=legend_handles, loc='best')
+
+    # # Rotate the text in the legend
+    # for text in legend.get_texts():
+    #     text.set_rotation(-90)
 
     # Get the Matplotlib figure and axis
     fig = plt.gcf()
     ax = plt.gca()
-
-    # Rotate the graph if needed
-    # ax.view_init(azim=-90) # Uncomment if rotation is required
 
     # Convert the Matplotlib figure to a NumPy array
     canvas = FigureCanvasAgg(fig)
@@ -157,7 +149,6 @@ def draw_graph_with_target(graph_data, target, player_position, path=None):
 
 
 def main_plotting_process():
-    window_size = (800, 600)
 
     redis_conn = connect_to_redis()
     redis_conn.flushall()
@@ -174,13 +165,10 @@ def main_plotting_process():
                 path = astar(graph_data,player_position,target, threshold=25)
                 if path is not None:
                     path_found = True
-                    print(path)
                 else:
                     print('Path is None')
 
             img_bgr = draw_graph_with_target(graph_data, target, player_position, path)
-            # img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-            #img_bgr = rotate_map(img_bgr, player_orientation)
             img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
             cv2.imshow('Real-Time Graph', img_bgr)
 

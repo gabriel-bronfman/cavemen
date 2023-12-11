@@ -1,31 +1,26 @@
 import redis
 import json
 import cv2
+from typing import Any
 
-def deserialize(data):
-    return json.loads(data) if data else None
+from utils import deserialize, connect_to_redis
 
-def get_redis_data(redis_conn):
+def get_redis_data(redis_conn: redis.Redis) -> int:
     player_orientation = deserialize(redis_conn.get('player_orientation'))
     return player_orientation
 
-def connect_to_redis():
-    return redis.Redis(host='localhost', port=6379, db=0, password='robot_interface')
 
-def main ():
+def main():
     redis_conn = connect_to_redis()
 
-    upArrow = cv2.imread('arrows/upwards_arrow.png')
-    rightArrow = cv2.imread('arrows/right_arrow.png')
-    leftArrow = cv2.imread('arrows/left_arrow.png')
-    downArrow = cv2.imread('arrows/downward_arrow.png')
-
+    upArrow = cv2.imread('assets/img/arrows/upwards_arrow.png')
+    rightArrow = cv2.imread('assets/img/arrows/right_arrow.png')
+    leftArrow = cv2.imread('assets/img/arrows/left_arrow.png')
+    downArrow = cv2.imread('assets/img/arrows/downward_arrow.png')
 
     while True:
         
         direction = get_redis_data(redis_conn)
-
-        print(direction)
 
         if direction == 0:
             cv2.imshow('direction', upArrow)
@@ -42,3 +37,4 @@ def main ():
 
 if __name__ == '__main__':
     main()
+    cv2.destroyAllWindows()

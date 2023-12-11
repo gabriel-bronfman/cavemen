@@ -1,24 +1,29 @@
 from vis_nav_game import Player, Action
+import vis_nav_game
 import pygame
 import cv2
 import numpy as np
 import sys
+import os
 import random
-from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, compare_histograms, process_image_and_find_best_match
 import networkx as nx
-import math
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import redis
+from redis.exceptions import AuthenticationError
 import json
 import subprocess
 import time
+from typing import List, Any
+
+from place_recognition import extract_sift_features, create_visual_dictionary, generate_feature_histograms, process_image_and_find_best_match
+from utils import connect_to_redis, euclidean_distance, serialize
 
 ROTATE_VALUE = 2.415
 MOVE_VALUE = 5
 
 class KeyboardPlayerPyGame(Player):
-    def __init__(self):
+    def __init__(self) -> None:
         self.fpv = None
         self.last_act = Action.IDLE
         self.screen = None
@@ -38,27 +43,21 @@ class KeyboardPlayerPyGame(Player):
         self.target = None
 
         # Initialize the map data
-        self.map_size = (1000, 1000, 3)  # Example size for a larger map
-        self.map_data = np.zeros(self.map_size, dtype=np.uint8)
         self.direction = 0  # Represents the current angle in degrees
-        self.map_scale = 4  # Each unit in the map_data will be a 4x4 pixel square in the OpenCV window
-
         
         self.player_position = (0,0)
         self.key_hold_state = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False}
-        self.key_hold_time = {pygame.K_LEFT: {'start':0, 'end':0}, pygame.K_RIGHT: {'start':0, 'end':0}, pygame.K_UP: {'start':0, 'end':0}, pygame.K_DOWN: {'start':0, 'end':0}}
         
-        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=0, password='robot_interface') 
+        self.redis = connect_to_redis()
         self.redis.flushall()
         super(KeyboardPlayerPyGame, self).__init__()
 
-    def reset(self):
+    def reset(self) -> None:
         self.fpv = None
         self.last_act = Action.IDLE
         self.screen = None
 
         # Reset map data
-        self.map_data.fill(0)
         self.direction = 0
         
         self.player_position = (0,0)
@@ -77,7 +76,7 @@ class KeyboardPlayerPyGame(Player):
             pygame.K_t: 1
         }
 
-    def act(self):
+    def act(self) -> Action:
         time.sleep(.002)
         if 0 < self.turn_count < 37:
             self.turn_count += 1
@@ -135,7 +134,7 @@ class KeyboardPlayerPyGame(Player):
         return self.last_act
     
 
-    def show_target_images_default(self):
+    def show_target_images_default(self) -> None:
         targets = self.get_target_images()
         if targets is None or len(targets) <= 0:
             return
@@ -165,7 +164,7 @@ class KeyboardPlayerPyGame(Player):
         cv2.imshow(f'KeyboardPlayer:target_images', concat_img)
         cv2.waitKey(1)
 
-    def show_target_images(self):
+    def show_target_images(self) -> List:
         self.player_position = (0,0)
         self.direction = 0
         targets = self.get_target_images()
@@ -288,7 +287,7 @@ class KeyboardPlayerPyGame(Player):
         cv2.waitKey(1)
         return best_indexes
 
-    def set_target_images(self, images):
+    def set_target_images(self, images) -> None:
         super(KeyboardPlayerPyGame, self).set_target_images(images)
         self.target = self.show_target_images()
         
@@ -301,9 +300,9 @@ class KeyboardPlayerPyGame(Player):
             cv2.moveWindow("KeyboardPlayer:target_images", 500, 200)
             
 
-    def pre_navigation(self):
-        print("pre_nav")
-        targets = self.get_target_images()
+    # def pre_navigation(self) -> None:
+    #     print("pre_nav")
+    #     targets = self.get_target_images()
 
     def pre_navigation_bypass(self) -> None:
         if len(self.images) != 0:
@@ -321,13 +320,13 @@ class KeyboardPlayerPyGame(Player):
             print(f"Creating {len(self.images)} histograms")
             self.histograms = generate_feature_histograms(descriptors, self.visual_dictionary)   
 
-    def find_targets(self):
+    def find_targets(self) -> None:
         targets = self.get_target_images()
         for target in targets:
             best_indexes = process_image_and_find_best_match(target,self.histograms,self.visual_dictionary)
             # cv2.imshow("best target", self.images[best_indexes[0]])
 
-    def see(self, fpv):
+    def see(self, fpv: np.ndarray) -> None:
         if fpv is None or len(fpv.shape) < 3:
             return
 
@@ -337,7 +336,7 @@ class KeyboardPlayerPyGame(Player):
             h, w, _ = fpv.shape
             self.screen = pygame.display.set_mode((w, h))
 
-        def convert_opencv_img_to_pygame(opencv_image):
+        def convert_opencv_img_to_pygame(opencv_image: np.ndarray) -> pygame.Surface:
             """
             Convert OpenCV images for Pygame.
 
@@ -361,7 +360,7 @@ class KeyboardPlayerPyGame(Player):
             self.update_redis_data()
         pygame.display.update()
 
-    def update_map_on_keypress(self):
+    def update_map_on_keypress(self) -> None:
 
         self.direction %= 360
         move_x, move_y = 0, 0
@@ -376,7 +375,7 @@ class KeyboardPlayerPyGame(Player):
         sys.stdout.flush()
 
 
-    def create_graph_from_poses(self, threshold=25):
+    def create_graph_from_poses(self, threshold: int= 25) -> nx.Graph:
         if self.poses is None or len(self.poses) == 0:
             return None
         """
@@ -447,7 +446,7 @@ class KeyboardPlayerPyGame(Player):
         
         return graph
     
-    def update_redis_data(self):
+    def update_redis_data(self) -> None:
         # Serialize data if necessary (e.g., JSON)
         if self.graph is None:
             return
@@ -456,30 +455,23 @@ class KeyboardPlayerPyGame(Player):
         self.redis.set('player_position', serialize(self.player_position))
         self.redis.set('player_orientation', serialize(self.direction))
 
-def serialize(data):
-    return json.dumps(data)
-
-def euclidean_distance(p1, p2):
-    """Calculate the Euclidean distance between two points."""
-    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-
 
 if __name__ == "__main__":
-    import vis_nav_game
-    import sys
-    import os
-
     # Set an environment variable for macOS to ensure GUI runs in the main thread
     os.environ['PYTHONUNBUFFERED'] = '1'
 
     # Start plotter.py as a subprocess
-    # plotter_process = subprocess.Popen([sys.executable, "plotter.py"])
+    plotter_process = subprocess.Popen([sys.executable, "plotter.py"])
+    arrow_process = subprocess.Popen([sys.executable, "arrow.py"])
 
     # try:
         # Start the main game
     vis_nav_game.play(the_player=KeyboardPlayerPyGame())
     # finally:
-        # Ensure that plotter.py is terminated when player.py finishes
-        # plotter_process.terminate()
-        # plotter_process.wait()
+    # Ensure that plotter.py is terminated when player.py finishes
+    plotter_process.terminate()
+    plotter_process.wait()
+    arrow_process.terminate()
+    arrow_process.wait()
+
 
