@@ -62,6 +62,9 @@ class KeyboardPlayerPyGame(Player):
 
         self.redis = connect_to_redis()
         self.redis.flushall()
+
+        self.nav_time = 0
+        self.nav = False
         super(KeyboardPlayerPyGame, self).__init__()
 
     def reset(self) -> None:
@@ -415,6 +418,10 @@ class KeyboardPlayerPyGame(Player):
 
     def set_target_images(self, images) -> None:
         super(KeyboardPlayerPyGame, self).set_target_images(images)
+        if self.get_state() is not None:
+            self.nav_time = self.get_state()[3]
+            self.nav = True
+
         self.target = self.show_target_images()
 
         if self.target is not None:
@@ -518,6 +525,20 @@ class KeyboardPlayerPyGame(Player):
             self.player_position[0] + move_x,
             self.player_position[1] + move_y,
         )
+        if not self.nav:
+            sys.stdout.write(
+                f"\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}"
+            )
+            sys.stdout.flush()
+        else:
+            sys.stdout.write(
+                f"\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}, Time: {(self.get_state()[3] - self.nav_time):.2f}"
+            )
+            sys.stdout.flush()
+        self.player_position = (
+            self.player_position[0] + move_x,
+            self.player_position[1] + move_y,
+        )
 
         sys.stdout.write(
             f"\rX: {self.player_position[0]:.2f} Y:{self.player_position[1]:.2f} W: {self.direction:.2f}"
@@ -556,7 +577,7 @@ class KeyboardPlayerPyGame(Player):
         curr_node_index = -1
         graph.add_node(prev_node_pose)
         for curr_node_pose in self.poses[1:]:
-            print(f"i: {curr_node_index} curr_node: {curr_node_pose} ")
+            # print(f"i: {curr_node_index} curr_node: {curr_node_pose} ")
 
             # Check if the node is a duplicate
             is_duplicate = False
