@@ -94,56 +94,59 @@ class KeyboardPlayerPyGame(Player):
         if 0 < self.turn_count < 37:
             self.turn_count += 1
             return self.last_act
-        else:
-            self.turn_count = 0
-            pygame.event.set_allowed(pygame.KEYDOWN)
-            pygame.event.set_allowed(pygame.KEYUP)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    self.last_act = Action.QUIT
-                    self.redis.flushall()
-                    self.redis.flushdb()
-                    self.redis.close()
-                    return Action.QUIT
+        self.turn_count = 0
+        pygame.event.set_allowed(pygame.KEYDOWN)
+        pygame.event.set_allowed(pygame.KEYUP)
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key in self.keymap:
-                        if event.key == pygame.K_p:
-                            self.pre_navigation_bypass()
-                        elif event.key == pygame.K_r:
-                            self.player_position = (0, 0)
-                        elif event.key == pygame.K_t:
-                            self.direction = 0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                self.last_act = Action.QUIT
+                self.redis.flushall()
+                self.redis.flushdb()
+                self.redis.close()
+                return Action.QUIT
 
-                        else:
-                            self.key_hold_state[event.key] = True
-                            self.last_act |= self.keymap[event.key]
-                            if self.keymap[event.key] == Action.LEFT:
-                                pygame.event.set_blocked(pygame.KEYDOWN)
-                                pygame.event.set_blocked(pygame.KEYUP)
-                                self.turn_count = 1
-                                self.direction += 90
-                            elif self.keymap[event.key] == Action.RIGHT:
-                                pygame.event.set_blocked(pygame.KEYDOWN)
-                                pygame.event.set_blocked(pygame.KEYUP)
-                                self.turn_count = 1
-                                self.direction += -90
-
+            if event.type == pygame.KEYDOWN:
+                if event.key in self.keymap:
+                    if event.key == pygame.K_p:
+                        self.pre_navigation_bypass()
+                    elif event.key == pygame.K_r:
+                        self.player_position = (0, 0)
+                    elif event.key == pygame.K_t:
+                        self.direction = 0
                     else:
-                        self.show_target_images()
-                if event.type == pygame.KEYUP:
-                    if event.key in self.keymap:
-                        if (
-                            event.key == pygame.K_p
-                            or event.key == pygame.K_r
-                            or event.key == pygame.K_t
-                        ):
-                            pass
-                        else:
-                            self.key_hold_state[event.key] = False
-                            self.last_act ^= self.keymap[event.key]
+                        # Check if either shift key is pressed
+                        keys = pygame.key.get_pressed()
+                        shift_pressed = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+                        # update action
+                        self.key_hold_state[event.key] = True
+                        self.last_act |= self.keymap[event.key]
+                        if self.keymap[event.key] in [Action.LEFT, Action.RIGHT]:
+                            if shift_pressed:
+                                continue
+                            pygame.event.set_blocked(pygame.KEYDOWN)
+                            pygame.event.set_blocked(pygame.KEYUP)
+                            self.turn_count = 1
+                            self.direction += (
+                                90 if self.keymap[event.key] == Action.LEFT else -90
+                            )
+                else:
+                    self.show_target_images()
+            if event.type == pygame.KEYUP:
+                if event.key in self.keymap:
+                    if (
+                        event.key == pygame.K_p
+                        or event.key == pygame.K_r
+                        or event.key == pygame.K_t
+                        or event.key == pygame.K_LSHIFT
+                        or event.key == pygame.K_RSHIFT
+                    ):
+                        pass
+                    else:
+                        self.key_hold_state[event.key] = False
+                        self.last_act ^= self.keymap[event.key]
 
         self.update_map_on_keypress()
         return self.last_act
