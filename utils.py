@@ -26,9 +26,9 @@ def connect_to_redis():
 
     try:
         # Try to connect without a password if not provided
-        connection = redis.Redis(host=host, port=port, db=db, password=password)
+        connection = redis.Redis(host=host, port=port, db=db)
         connection.ping()  # Attempt to send a command to check the connection
-    except AuthenticationError:
+    except:
         if password is None:
             raise
         # Try to connect with a password if the first attempt fails
