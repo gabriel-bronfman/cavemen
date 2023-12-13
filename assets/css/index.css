@@ -1,0 +1,325 @@
+body {
+  font-family: 'Noto Sans', sans-serif;
+}
+
+
+.footer .icon-link {
+    font-size: 25px;
+    color: #000;
+}
+
+.link-block a {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#citation {
+  text-align: right;
+}
+
+
+.teaser .hero-body {
+  padding-top: 0;
+  padding-bottom: 3rem;
+}
+
+.teaser {
+  font-family: 'Google Sans', sans-serif;
+}
+
+
+.publication-header .hero-body {
+}
+
+.publication-title {
+    font-family: 'Google Sans', sans-serif;
+}
+
+.publication-authors {
+    font-family: 'Google Sans', sans-serif;
+}
+
+.publication-venue {
+    color: #555;
+    width: fit-content;
+    font-weight: bold;
+}
+
+.publication-awards {
+    color: #ff3860;
+    width: fit-content;
+    font-weight: bolder;
+}
+
+.publication-authors {
+}
+
+.publication-authors a {
+   color: hsl(204, 86%, 53%) !important;
+}
+
+.publication-authors a:hover {
+    text-decoration: underline;
+}
+
+.author-block {
+  display: inline-block;
+}
+
+.publication-banner img {
+}
+
+.publication-authors {
+  /*color: #4286f4;*/
+}
+
+.publication-video {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%;
+
+    overflow: hidden;
+    border-radius: 10px !important;
+}
+
+.publication-video iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.publication-body img {
+}
+
+.results-carousel {
+  overflow: hidden;
+}
+
+.results-carousel .item {
+  margin: 5px;
+  overflow: hidden;
+  padding: 20px;
+  font-size: 0;
+}
+
+.results-carousel video {
+  margin: 0;
+}
+
+.slider-pagination .slider-page {
+  background: #000000;
+}
+
+.eql-cntrb {
+  font-size: smaller;
+}
+
+:root {
+  --bar-heading: #363635;
+  --page-outline: #595a4a;
+  --color-one: #b3c0d1;
+  --color-two: #e7c5ce;
+}
+
+body, html {
+  background-color: var(--page-outline);
+  height: 100%;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items:center;
+  background-color: var(--color-one);
+  color: black;
+  height: auto;
+  width: auto;
+}
+
+.heading > h1 {
+  font: 50px "Lucida Console", monospace;
+}
+
+.heading > h2 {
+  font: 25px "Courier New", monospace;
+  text-align: center;
+}
+
+.personal-info {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  background-color: var(--color-two);
+  height: auto;
+  width: auto;
+  font: 20px "Alata", Verdana, sans-serif;
+}
+
+.personal-info > p {
+  flex: 2 200px;
+  padding: 4px;
+}
+
+.personal-info > section > ul {
+  flex: 4 300px;
+  columns: 2;
+}
+
+.slideshow {
+  position: relative;
+  margin: auto;
+  flex: 1 300px;
+}
+
+.slide {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fade-anim {
+  animation: fade 1.5s;
+}
+
+@keyframes fade {
+  from
+  {
+      opacity: .4
+  }
+  to
+  {
+      opacity: 1
+  }
+}
+
+.slide > a > img {
+  height: 200px;
+  width: 200px;
+}
+
+.prev, .next  {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  margin-top: -22px;
+  padding: 16px;
+  color: var(--bar-heading);
+  font-weight: bold;
+  font-size: 18px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none;
+}
+
+.next {
+  right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.prev:hover, .next:hover {
+  background-color: var(--bar-heading);
+  color: white;
+}
+
+.prev:active, .next:active {
+  background-color: white;
+}
+
+.text {
+  font-size: 15px;
+  font-family: "Avant Garde";
+  padding: 8px 12px;
+  position: absolute;
+  bottom: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.projects {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  background-color: var(--color-one);
+  height: auto;
+  width: auto;
+  font: 16px "Alata", Verdana, sans-serif;
+  padding-bottom: 20px;
+}
+
+.projects > a:link, .projects > a:visited {
+  flex: 1;
+  width: 50px;
+  border: solid 2px var(--bar-heading);
+  margin: 3%;
+  color: black;
+  text-decoration: none;
+  text-align: center;
+  padding: 10px;
+  transition: background-color 0.5s;
+}
+
+.projects > a:hover {
+  background-color: var(--bar-heading);
+  border-color: var(--page-outline);
+}
+
+.projects > a:active {
+  background-color: var(--page-outline);
+}
+
+.projects > a > img {
+  height: auto;
+  width: 70px;
+}
+
+.contact-me {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background-color: var(--bar-heading);
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.social:link, .social:visited {
+  color: white;
+  border: solid 2px var(--color-one);
+  padding: 14px 25px;
+  font: 20px "Alata", Verdana, sans-serif;
+  text-align: center;
+  text-decoration: none;
+  font-family: "Avant Garde";
+  display: inline-block;
+  transition: background-color 0.5s;
+}
+
+.social:hover {
+  background-color: var(--color-one);
+  border-color: var(--color-two);
+  color: var(--bar-heading)
+}
+
+.social:active {
+  background-color: var(--page-outline);
+}
+
+.imgheading {
+  background-image: url(https://cdn.discordapp.com/attachments/1057765263820455957/1057791635787878480/IMG_7808.jpg);
+  height: 70%;
+  opacity: 0.45;
+}
+
+.imgheading, .imgpinfo, .imgprojects, .imgsocials {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0.8;
+}
