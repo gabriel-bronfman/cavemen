@@ -21,7 +21,11 @@ cp "environment.yml" "../${folder_to_zip}/environment.yml"
 cp "README.md" "../${folder_to_zip}/README.md"
 mkdir "../${folder_to_zip}/data"
 mkdir "../${folder_to_zip}/data/save"
+mkdir "../${folder_to_zip}/assets"
+mkdir "../${folder_to_zip}/assets/img"
+mkdir "../${folder_to_zip}/assets/img/arrows"
 cp -r "data/save" "../${folder_to_zip}/data"
+cp -r "assets/img/arrows" "../${folder_to_zip}/assets/img"
 # Create the zip file with the specified name
 zip -r "../${folder_to_zip}.zip" "../${folder_to_zip}"
 
