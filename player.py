@@ -56,6 +56,7 @@ class KeyboardPlayerPyGame(Player):
             pygame.K_RIGHT: False,
             pygame.K_UP: False,
             pygame.K_DOWN: False,
+            pygame.K_LSHIFT: False,
         }
 
         self.redis = connect_to_redis()
@@ -87,6 +88,7 @@ class KeyboardPlayerPyGame(Player):
             pygame.K_p: 1,
             pygame.K_r: 1,
             pygame.K_t: 1,
+            pygame.K_LSHIFT: 1,
         }
 
     def act(self) -> Action:
@@ -116,15 +118,14 @@ class KeyboardPlayerPyGame(Player):
                         self.player_position = (0, 0)
                     elif event.key == pygame.K_t:
                         self.direction = 0
+                    elif event.key == pygame.K_LSHIFT:
+                        self.key_hold_state[pygame.K_LSHIFT] = True
                     else:
-                        # Check if either shift key is pressed
-                        keys = pygame.key.get_pressed()
-                        shift_pressed = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
                         # update action
                         self.key_hold_state[event.key] = True
                         self.last_act |= self.keymap[event.key]
                         if self.keymap[event.key] in [Action.LEFT, Action.RIGHT]:
-                            if shift_pressed:
+                            if self.key_hold_state[pygame.K_LSHIFT]:
                                 continue
                             pygame.event.set_blocked(pygame.KEYDOWN)
                             pygame.event.set_blocked(pygame.KEYUP)
@@ -133,17 +134,18 @@ class KeyboardPlayerPyGame(Player):
                                 90 if self.keymap[event.key] == Action.LEFT else -90
                             )
                 else:
-                    self.show_target_images()
+                    if not self.nav:
+                        self.show_target_images()
             if event.type == pygame.KEYUP:
                 if event.key in self.keymap:
                     if (
                         event.key == pygame.K_p
                         or event.key == pygame.K_r
                         or event.key == pygame.K_t
-                        or event.key == pygame.K_LSHIFT
-                        or event.key == pygame.K_RSHIFT
                     ):
                         pass
+                    elif event.key == pygame.K_LSHIFT:
+                        self.key_hold_state[pygame.K_LSHIFT] = False
                     else:
                         self.key_hold_state[event.key] = False
                         self.last_act ^= self.keymap[event.key]
@@ -635,6 +637,7 @@ if __name__ == "__main__":
     vis_nav_game.play(the_player=KeyboardPlayerPyGame())
     # finally:
     # Ensure that plotter.py is terminated when player.py finishes
+    cv2.destroyAllWindows()
     plotter_process.terminate()
     plotter_process.wait()
     arrow_process.terminate()
