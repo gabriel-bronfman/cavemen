@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Bronfman"
+  given-names: "Gabriel"
+- family-names: "Gupta"
+  given-names: "Shubham"
+  orcid: "https://orcid.org/0009-0002-6966-588X"
+title: "🗿 Cavemen: A prehistoric approach for Mapless Navigation"
+version: 1.0.0
+date-released: 2023-12-13
+url: "https://github.com/gabriel-bronfman/cavemen"

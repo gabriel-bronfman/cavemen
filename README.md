@@ -1,10 +1,10 @@
 <p align="center">
 
-  <h1 align="center">🗿 Cavemen: A prehistoric approach for mapless navigation</h1>
+  <h1 align="center">🗿 Cavemen: A prehistoric approach for Mapless Navigation</h1>
 
   <h4 align="center"><a href="https://github.com/gabriel-bronfman">Gabriel Bronfman</a>, <a href="https://github.com/iamshubhamgupto">Shubham Gupta</a></h4>
 
-  <h5 align="center">&emsp; <a href="https://docs.google.com/presentation/d/1YwzE0sU7YGphtKLduPHkAlaf1JeGr86exQJ9t-L-AA8/edit?usp=sharing"> Slides</a> | <a href=""> Report [Coming Soon] </a> | <a href=""> Code [Coming Soon] </a></h5>
+  <h5 align="center">&emsp; <a href="https://docs.google.com/presentation/d/1VS014bRyqm4rN3s_tJweIRwDdKjDeuX9mA59doqHDfc/edit?usp=sharing"> Slides</a> | <a href=""> <a href="https://gabriel-bronfman.github.io/cavemen/">Project Page</a></h5>
 
   <!-- Images container -->
   <div style="align-items: center;">
@@ -17,11 +17,6 @@
     <b>(a)</b> The data structure overview of how mapping is done in the exploration phase. <b>(b)</b> The top 12 resulting targets and their corresponding (x,y,w) which is the displacement in the x, y axis and rotation. The bottom four images show the target front, right, back and left view respectively.
 </div>
 </p>
-
-
-## Abstract
-
-This repository contains the source code for submission made by the team `Shoob and Goob`. The goal of the project is to map and localize views in previously unexplored 3D worlds. We implement the Dead Reckoning algorithm to keep track of the movement from the given origin. We extract ORB features of the 3D world which is then used to train a Visual Bag of Words on all scenes seen by the robot during the exploration phase. We are able to localize the target scene before the navigation phase begins with the coordinates and rotation.
 
 ## Installation
 **NOTE**: The instructions have been tested on a M1 Macbook pro.
