@@ -71,5 +71,18 @@ conda env export --no-builds | grep -v "prefix" > environment.yml
 | r  | reset position value |
 | t  | reset rotation value |
 
-## References
-The project is built from the [starter code](https://github.com/ai4ce/vis_nav_player) released by Professor Chen Feng and the TAs.
+## Acknowledgments
+The project is built from the [starter code](https://github.com/ai4ce/vis_nav_player) released by Professor Chen Feng and the TAs for the course Robot Perception.
+
+## Citation
+If you find this work useful, please cite us using (bibtex):
+```
+@software{Bronfman_Cavemen_A_2023,
+author = {Bronfman, Gabriel and Gupta, Shubham},
+month = dec,
+title = {{🗿 Cavemen: A prehistoric approach for Mapless Navigation}},
+url = {https://github.com/gabriel-bronfman/cavemen},
+version = {1.0.0},
+year = {2023}
+}
+```
